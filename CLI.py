@@ -4,7 +4,6 @@ import database.db_init
 import database.db_operation
 import util.tools as ut
 
-
 def loadhelp():
     return """
     get put del ls cd exit
@@ -14,7 +13,7 @@ def loadhelp():
 global IDFS_root
 
 if __name__ == "__main__":
-    file_object = open("../config/profile.json")
+    file_object = open("config/profile.json")
     file_json = file_object.read()
     profile_data = json.loads(file_json)
     print("Hello!\nYour server address: %s\nIDFS root: %s\n" %
@@ -39,7 +38,7 @@ if __name__ == "__main__":
         elif cmd == "get":
             print("get")
         elif cmd == "put":
-            file_name = op.split[1]
+            file_name = op.split()[1]
             print("Put file %d", file_name)
             db_op.put(file_name, current_path, 100, ut.GetHostName())
         elif cmd == "ls":
@@ -48,7 +47,7 @@ if __name__ == "__main__":
             print("file:")
             print(child_file)
         elif cmd == "cd":
-            target_dir = op.split[1]
+            target_dir = op.split()[1]
             if target_dir in child_dir:
                 if current_path == '/':
                     current_path = current_path+target_dir
@@ -61,7 +60,7 @@ if __name__ == "__main__":
                 child_dir = db_op.lsdir(current_path)
                 child_file = db_op.lsfile(current_path)
         elif cmd == "del":
-            del_obj=op.split[1]
+            del_obj=op.split()[1]
             if del_obj in child_dir:
                 db_op.deldir(del_obj,current_path)
             elif del_obj in child_file:

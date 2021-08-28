@@ -3,12 +3,12 @@ import hashlib
 import util.tools as ut
 
 sql_insert_dir = "INSERT INTO PATH VALUES('%s', '%s')"
-sql_get_chfile = "SELECT FILE.filename FROM FILE WHERE FILE.path=%s"
-sql_get_chdir = "SELECT PATH.dirname FROM PATH WHERE PATH.parentPath=%s"
-sql_put_file = "INSERT INTO FILE VALUES('%s', '%s','%d','%d','%d')"
-sql_put_file_log = "INSERT INTO FILE VALUES('%d', '%s','%s','%d')"
-sql_del_file = "DELETE FROM FILE WHERE filename=%s AND path=%s"
-sql_del_dir = "DELETE FROM FILE , PATH WHERE FILE.path=%s AND PATH.dirname=%s AND PATH.parentPath=%s"
+sql_get_chfile = "SELECT FILE.filename FROM FILE WHERE FILE.path='%s'"
+sql_get_chdir = "SELECT PATH.dirname FROM PATH WHERE PATH.parentPath='%s'"
+sql_put_file = "INSERT INTO FILE VALUES('%s', '%s','%d','%d','%s')"
+sql_put_file_log = "INSERT INTO LOG VALUES('%s', '%s','%s','%d')"
+sql_del_file = "DELETE FROM FILE WHERE filename='%s' AND path='%s'"
+sql_del_dir = "DELETE FROM FILE , PATH WHERE FILE.path='%s' AND PATH.dirname='%s' AND PATH.parentPath='%s'"
 
 
 class DB_operation(object):
@@ -24,11 +24,11 @@ class DB_operation(object):
         self.cur.execute(sql_insert_dir % (dir_name, cu_path))
 
     def lsfile(self, current_path: str):
-        self.cur.execute(sql_get_chfile % (current_path, current_path))
+        self.cur.execute(sql_get_chfile % (current_path))
         return self.cur.fetchall()
 
     def lsdir(self, current_path: str):
-        self.cur.execute(sql_get_chdir % (current_path, current_path))
+        self.cur.execute(sql_get_chdir % (current_path))
         return self.cur.fetchall()
 
     def put(self, file_name: str, current_path: str, size: int, device: str):
