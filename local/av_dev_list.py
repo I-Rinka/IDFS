@@ -1,0 +1,1 @@
+# Maintain a device database for local use. Make decision to send data to which device
