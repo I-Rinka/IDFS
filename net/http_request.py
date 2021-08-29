@@ -1,6 +1,6 @@
 import requests
 import util.tools as ut
-import oop.device.device as dv
+import local.device as dv
 import json
 
 

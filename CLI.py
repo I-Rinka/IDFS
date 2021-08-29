@@ -3,6 +3,7 @@ import os
 import database.db_init
 import database.db_operation
 import util.tools as ut
+import threading
 
 
 def loadhelp():
@@ -13,6 +14,7 @@ def loadhelp():
 
 global IDFS_root
 
+threading.Thread()
 
 def get_child_item(db_op: database.db_operation.DB_operation):
     db_op.commit()

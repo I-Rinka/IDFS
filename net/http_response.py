@@ -1,4 +1,4 @@
-import oop.task as tsk
+import local as tsk
 from concurrent.futures import thread as th
 import socket,re
 def open_file(路径):
