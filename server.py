@@ -1,21 +1,28 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
+
 import json
 import urllib
 import util.tools as ut
 import cgi
 import re
+import queue
+import threading
 
 data = {'result': 'this is a test'}
 host = ('localhost', int(ut.GetServerPort()))
 
+sema=threading.Semaphore(value=0)
+Q=queue.Queue()
 
 class Resquest(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
+        Q.put(self.wfile)
+        sema.acquire()
         self.send_header('Content-type', 'application/json')
         self.end_headers()
-        self.wfile.write(json.dumps(data).encode())
-        print(self.headers)
+        # self.wfile.write(json.dumps(data).encode())
+        # print(self.headers)
         # print("auth:"+self.headers["Authorization"])
 
     def do_POST(self):
@@ -39,8 +46,9 @@ class Resquest(BaseHTTPRequestHandler):
             self.wfile.write(datas)
 
         elif self.headers['Operation'] == 'upload':
-            open("%s" % "收到的文件", "wb+").write(datas)
-
+            # open("%s" % "收到的文件", "wb+").write(datas)
+            Q.get().write(datas)
+            sema.release()
 
 if __name__ == '__main__':
     server = HTTPServer(host, Resquest)

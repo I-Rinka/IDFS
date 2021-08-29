@@ -14,7 +14,7 @@ def GetServerIP():
     return profile_data["server_address"]
 
 def GetServerPort():
-    return profile_data["server_port"]
+    return int(profile_data["server_port"])
 
 def GetIDFSRoot():
     return profile_data["IDFS_local_root"]

@@ -10,7 +10,7 @@ class Request(object):
     def __init__(self, initial_connect_target: str):
         super(Request, self).__init__()
         self.protocal = "http://"
-        self.next_connection_dest = initial_connect_target+':'+ut.GetServerPort()
+        self.next_connection_dest = initial_connect_target+':'+str(ut.GetServerPort())
         self.url = self.protocal+self.next_connection_dest
 
     def ChgConnectTarget(self, target_ip: str):
@@ -46,5 +46,15 @@ class Request(object):
         # print(self.url+path_base)
         r = requests.post(self.url+IDFS_path,
                           headers=header,data=open(file_path, 'rb').read())
+        print(r.headers)
+        return r.text
+
+    
+    def GetFile(self, IDFS_path: str):
+        header = {"Content-Type": "file", "Authorization": "{}".format(
+            ut.GetMyDeviceID()), "Operation": "{}".format("getfile")}
+
+        r = requests.get(self.url+IDFS_path,
+                          headers=header)
         print(r.headers)
         return r.text
