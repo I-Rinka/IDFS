@@ -5,6 +5,9 @@ def GetDeviceID(device_name: str, device_type: str, device_os: str):
     return hashlib.md5(
         (device_name+device_type+device_os).encode('utf8')).hexdigest()
 
+device_phone="phone"
+device_server="server"
+device_laptop="laptop"
 
 class Device():
     """parent object for all device"""
