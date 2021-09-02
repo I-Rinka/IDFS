@@ -1,4 +1,6 @@
-import local.device as devc
+import local.device as dvc
+import local.dev_list as dvl
+import util.tools as ut
 import threading
 import queue
 import json
@@ -8,13 +10,26 @@ task_device_reg = "task_dev_reg"
 task_upload_file = "task_upload"
 task_download_file = "task_download"
 
+device_list = dvl.MY_DEV_LIST
+CLOG_LIST = {}
+TASK_QUEUE = queue.Queue(maxsize=-1)
+
 
 class base_task(object):
     """docstring for base_task."""
 
-    def __init__(self, task_type):
+    def __init__(self, task_type, requester_id: str):
         super(base_task, self).__init__()
         self.task_type = task_type
+        device_data = device_list[requester_id]
+        self.requester_id = requester_id
+        self.device = None
+        # self.dev_task_queue = None
+        if not device_data is None:
+            self.device = device_data["device"]
+            # self.dev_task_queue = device_data["task_queue"]
+        if not self.device is None:
+            device_list.update_device(self.device)
 
     def do(self):
         pass
@@ -26,35 +41,53 @@ class base_task(object):
 class task_null(base_task):
     """heart beat, do nothing"""
 
-    def __init__(self):
-        super(task_null, self).__init__("task_null")
+    def __init__(self, requester_id: str):
+        super(task_null, self).__init__("task_null", requester_id)
 
 
 class task_dev_reg(base_task):
     """online device information, update it into device list"""
 
-    def __init__(self, device: devc.Device):
-        super(task_dev_reg, self).__init__("task_dev_reg")
-        self.device = device
+    def __init__(self, requester_id: str, reg_device: dvc.Device):
+        super(task_dev_reg, self).__init__("task_dev_reg", requester_id)
+        self.target_device = dvc.Device
+
+    def do(self):
+        device_list.find_device(self.reg_device)
 
 
 class task_upload(base_task):
     """upload file to target"""
 
-    def __init__(self, target_dev: devc.Device, file_path: str):
+    def __init__(self, requester_id: str, target_dev: dvc.Device, file_path: str):
         super(task_upload, self).__init__("task_upload")
-        self.target_dev = target_dev
-        self.file_path = file_path
+        self.target_dev=target_dev
+        self.file_path=file_path
+        if requester_id == target_dev.device_id:
+            # target_dev.upload
+            # device 插入数据
+            return
+        if target_dev in device_list.available:
+            # target_dev.upload
+            pass
+            # if wrong, direct_dev.upload
+            # if wrong, server_dev.upload
 
 
 class task_download(base_task):
     """download file from target"""
 
-    def __init__(self, target_dev: devc.Device, file_path: str):
+    def __init__(self, requester_id: str, target_dev: dvc.Device, file_path: str):
         super(task_download, self).__init__("task_download")
-        self.task_download = task_download
-        self.file_path = file_path
-        self.target_dev = target_dev
+        self.target_dev=target_dev
+        self.file_path=file_path
+        if requester_id == target_dev.device_id:
+            # target_dev.download(Get)
+            return
+        if dvc in device_list.available:
+            # request download
+            # if wrong, 广播消息
+            pass
 
 
 def TaskJs2Obj(js):
@@ -62,17 +95,20 @@ def TaskJs2Obj(js):
     if tt == 'task_null':
         return task_null()
     elif tt == 'task_upload':
-        return task_upload(devc.Device(js['target_dev']['device_name'], js['target_dev']['device_type'], js['target_dev']['device_os'], js['target_dev']['device_ip']), js['file_path'])
+        return task_upload(dvc.Device(js['target_dev']['device_name'], js['target_dev']['device_type'], js['target_dev']['device_os'], js['target_dev']['device_ip']), js['file_path'])
     return task_null()
 
 
-def TaskObj2Json(tsk):
-    if tsk.task_type == 'task_null':
-        return {"task_type": 'task_null'}
-    elif tsk.task_type == 'task_upload':
-        return {
-            "task_type": 'task_upload',
-            "target_dev": devc.DvObj2Json(tsk.target_dev),
-            "file_path": tsk.file_path
-        }
-    return {"task_type": 'task_null'}
+def TaskObj2Json(task):
+    basic_task = {
+        "task_type": task.task_type,
+        "device": dvc.DvObj2Json(task.device),
+        "requester_id": task.requester_id
+    }
+    if task.task_type == 'task_null':
+        pass
+    elif task.task_type == 'task_dev_reg' or task.task_type == 'task_upload' or task.task_type == 'task_download':
+        basic_task["target_dev"] = dvc.DvObj2Json(task.reg_device)
+    elif task.task_type == 'task_upload' or task.task_type == 'task_download':
+        basic_task["file_path"] = dvc.DvObj2Json(task.file_path)
+    return basic_task

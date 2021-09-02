@@ -12,6 +12,7 @@ sql_del_file = "DELETE FROM FILE WHERE filename='%s' AND path='%s'"
 sql_cascade_del_file = "DELETE FROM FILE WHERE path LIKE '%s'"
 sql_del_dir = "DELETE FROM PATH WHERE PATH.dirname='%s' AND PATH.parentPath='%s' OR PATH.parentPath LIKE '%s'"
 
+sql_get_device = "SELECT LOG.device FROM LOG,FILE WHERE FILE.hash=LOG.hash AND FILE.filename='%s' AND FILE.path='%s'"
 
 class DB_operation(object):
     """docstring for DB_operation."""
@@ -47,6 +48,16 @@ class DB_operation(object):
                          (file_name, current_path, timestp, size, file_hash))
         self.cur.execute(sql_put_file_log %
                          (file_hash, 'uploading', device, timestp))
+
+    def getDevice(self, file_name: str, file_path: str):
+        file_hash = ut.GetFileHash(file_path+'/'+file_name)
+        self.cur.execute(sql_put_file %
+                         (file_name, file_path))
+        data = self.cur.fetchall()
+        res = []
+        for row in data:
+            res.append(row[0])
+        return res
 
     def mkdir(self, dir_name: str, current_path: str):
         self.cur.execute(sql_mkdir % (dir_name, current_path))

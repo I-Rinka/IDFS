@@ -27,8 +27,8 @@ def GetMyDeviceType():
     return profile_data["device_type"]
 
 
-def GetMyDevice():
-    return dvc.Device(GetMyDevName(),GetMyDeviceType(),GetMyOS(),GetMyIP())
+def GetMyDevice() -> dvc.Device:
+    return dvc.Device(GetMyDevName(), GetMyDeviceType(), GetMyOS(), GetMyIP())
 
 
 def GetMyOS():
@@ -38,8 +38,10 @@ def GetMyOS():
 def GetMyDevName():
     return socket.gethostname()
 
+
 def GetMyIP():
     return socket.gethostbyname(socket.gethostname())
+
 
 my_device_id = hashlib.md5(
     (GetMyDevName()+GetMyDeviceType()+GetMyOS()).encode('utf8')).hexdigest()
@@ -56,6 +58,12 @@ def GetIntTimeStamp():
 def GetFileHash(file_name: str, file_path: str, file_timestamp: int):
     hash_val = hashlib.md5(
         (file_name+file_path+str(file_timestamp)).encode('utf8')).hexdigest()
+    return hash_val
+
+
+def GetFileHash(file_path_name: str):
+    hash_val = hashlib.md5(
+        (file_path_name).encode('utf8')).hexdigest()
     return hash_val
 
 
