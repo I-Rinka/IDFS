@@ -18,11 +18,59 @@ class DB_operation(object):
         self.conn = sqlite3.connect(db_location)
         self.cur = self.conn.cursor()
 
+    def create_table(self):
+        self.conn.execute("""
+        CREATE TABLE IF NOT EXISTS File
+        (
+        file_name VARCHAR NOT NULL,
+        file_hash VARCHAR NOT NULL,
+        file_timestamp INTEGER,
+        file_path VARCHAR NOT NULL,
+        CONSTRAINT file_pk PRIMARY KEY (file_name,file_path)
+        );""")
+
+        self.conn.execute("""
+        CREATE TABLE IF NOT EXISTS Path
+        (
+        dirname VARCHAR NOT NULL,
+        parentPath VARCHAR NOT NULL,
+        CONSTRAINT path_pk PRIMARY KEY (dirname,parentPath)
+        );
+        """)
+
+        self.conn.execute("""
+        CREATE TABLE IF NOT EXISTS Log
+        (
+        file_hash VARCHAR NOT NULL,
+        device_id CHAR NOT NULL,
+        log_timestamp INTEGER,
+        CONSTRAINT log_pk PRIMARY KEY (file_hash,device_id,log_timestamp)
+        );
+        """)
+
+        self.conn.execute("""
+        CREATE TABLE IF NOT EXISTS Device
+        (
+        device_id CHAR NOT NULL,
+        device_status VARCHAR NOT NULL,
+        device_name VARCHAR NOT NULL,
+        device_ip VARCHAR NOT NULL,
+        CONSTRAINT device_pk PRIMARY KEY (device_id)
+        );
+        """)
+
+        self.conn.commit()
+
+    def exe(self, op: str):
+        self.conn.execute(op)
+
     def mkdir(self, cu_path: str, dir_name: str):
-        self.cur.execute("INSERT INTO PATH VALUES('%s', '%s')" % (dir_name, cu_path))
+        self.cur.execute("INSERT INTO PATH VALUES('%s', '%s')" %
+                         (dir_name, cu_path))
 
     def lsfile(self, current_path: str):
-        self.cur.execute("SELECT FILE.filename FROM FILE WHERE FILE.path='%s'" % (current_path))
+        self.cur.execute(
+            "SELECT FILE.filename FROM FILE WHERE FILE.path='%s'" % (current_path))
         data = self.cur.fetchall()
         res = []
         for row in data:
@@ -30,7 +78,8 @@ class DB_operation(object):
         return res
 
     def lsdir(self, current_path: str):
-        self.cur.execute("SELECT PATH.dirname FROM PATH WHERE PATH.parentPath='%s'" % (current_path))
+        self.cur.execute(
+            "SELECT PATH.dirname FROM PATH WHERE PATH.parentPath='%s'" % (current_path))
         data = self.cur.fetchall()
         res = []
         for row in data:
@@ -39,7 +88,7 @@ class DB_operation(object):
 
     def put(self, file_name: str, current_path: str, device_id: str):
         timestp = ut.GetIntTimeStamp()
-        file_hash = ut.GetFileHash(current_path+'/'+file_name) # 这里应该是文件的记录才对
+        file_hash = ut.GetFileHash(current_path+'/'+file_name)  # 这里应该是文件的记录才对
         # file_hash = ut.GetFileHash(file_name, current_path, size)
         self.cur.execute("INSERT INTO FILE VALUES('%s', '%s','%d','%d','%s')" %
                          (file_name, current_path, timestp, '100', file_hash))
@@ -58,13 +107,16 @@ class DB_operation(object):
         return res
 
     def mkdir(self, dir_name: str, current_path: str):
-        self.cur.execute("INSERT INTO PATH VALUES('%s', '%s')" % (dir_name, current_path))
+        self.cur.execute("INSERT INTO PATH VALUES('%s', '%s')" %
+                         (dir_name, current_path))
 
     def delfile(self, file_name: str, file_path: str):
-        self.cur.execute("DELETE FROM FILE WHERE filename='%s' AND path='%s'" % (file_name, file_path))
+        self.cur.execute(
+            "DELETE FROM FILE WHERE filename='%s' AND path='%s'" % (file_name, file_path))
 
     def deldir(self, dir_name: str, parent_path: str):
-        self.cur.execute("DELETE FROM PATH WHERE PATH.dirname='%s' AND PATH.parentPath='%s'" % (dir_name, parent_path))
+        self.cur.execute("DELETE FROM PATH WHERE PATH.dirname='%s' AND PATH.parentPath='%s'" % (
+            dir_name, parent_path))
         self.cur.execute("DELETE FROM FILE WHERE path LIKE '%s'" %
                          (ut.ConflatePath(parent_path, dir_name)))
 
