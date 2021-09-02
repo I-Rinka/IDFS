@@ -4,7 +4,6 @@ import socket
 import datetime
 import json
 import platform
-import local.device as dvc
 
 file_object = open("config/profile.json")
 file_json = file_object.read()
@@ -25,11 +24,6 @@ def GetIDFSRoot():
 
 def GetMyDeviceType():
     return profile_data["device_type"]
-
-
-def GetMyDevice() -> dvc.Device:
-    return dvc.Device(GetMyDevName(), GetMyDeviceType(), GetMyOS(), GetMyIP())
-
 
 def GetMyOS():
     return platform.system()

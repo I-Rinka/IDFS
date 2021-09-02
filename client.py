@@ -1,3 +1,3 @@
-import net.listener_local as ll
+import local.device as dvc
 
-ll.LOCAL_SERVER.serve_forever()
+print(dvc.Device)
