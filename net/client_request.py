@@ -9,15 +9,22 @@ port = str(ut.GetServerPort())
 
 
 def SendTask(task: tsk.base_task, ip: str):
-    header = {"Authorization": "{}".format(
-        ut.GetMyDeviceID()), "Operation": "{}".format("task")}
-    print(task.__dict__)
-    payload = json.dumps(task.__dict__)
-    print(port)
-    r = requests.post(protocal+ip+':'+port,
-                      headers=header, data=payload)
-    print(r.content)
-    return r.text
+    print("Send task\n%s\nto %s" % (task.__dict__, protocal+ip+':'+port))
+
+    if ip == ut.GetMyIP():
+        pass
+        return ""
+    else:
+        header = {"Authorization": "{}".format(
+            ut.GetMyDeviceID()), "Operation": "{}".format("task")}
+        print(task.__dict__)
+        payload = json.dumps(task.__dict__)
+        r = requests.post(protocal+ip+':'+port,
+                          headers=header, data=payload, timeout=5)
+        print(r.content)
+        print(r.status_code)
+        return r.text
+
 
 def UploadFile(file_path: str, ip: str):
     header = {"Content-Type": "file", "Authorization": "{}".format(
@@ -41,6 +48,6 @@ def GetFile(IDFS_path: str, ip: str):
 
     r = requests.get(protocal+ip+':'+port+IDFS_path,
                      headers=header)
-                     
+
     # print(r.headers)
     return r.text

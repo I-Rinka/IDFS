@@ -47,7 +47,7 @@ class task_upload(base_task):
     """upload file to target"""
 
     def __init__(self, requester_id: str, file_path: str):
-        super(task_upload, self).__init__("task_upload")
+        super(task_upload, self).__init__(ttype_upload_file,requester_id)
         self.file_path = file_path
 
 
@@ -55,7 +55,7 @@ class task_sql(base_task):
     """docstring for task_sql."""
 
     def __init__(self, requester_id: str, sql_type: str):
-        super(task_sql, self).__init__(task_sql)
+        super(task_sql, self).__init__(ttype_sql,requester_id)
         self.sql_type = sql_type
 
 
@@ -86,8 +86,8 @@ class task_sql_update_path(task_sql):
     """docstring for task_sql_insert_log."""
 
     def __init__(self, requester_id: str, base_path: str):
-        super(task_sql_insert_log, self).__init__(
-            requester_id, sql_file_insert)
+        super(task_sql_update_path, self).__init__(
+            requester_id, sql_path_update)
         self.base_path = base_path
 
 
@@ -104,26 +104,28 @@ class task_sql_device_update(task_sql):
 
 def TaskJs2Obj(js):
     tt = js['task_type']
-    if tt == ttype_null:
-        return task_null()
+       
     # elif tt == 'task_upload':
         # return task_upload(js['requester_id'], dvc.Device(js['target_dev']['device_name'], js['target_dev']['device_type'], js['target_dev']['device_os'], js['target_dev']['device_ip']), js['file_path'])
-    elif tt==ttype_reg:
+    if tt==ttype_reg:
         reg=task_reg(None,None,None,None,None)
         return reg.__dict__.update(js)
     elif tt==ttype_upload_file:
         reg=task_upload(None,None)
         return reg.__dict__.update(js)
 
-    elif tt == task_sql:
+    elif tt == ttype_sql:
         if js['sql_type']==sql_device_update:
             task=sql_device_update(None,None,None,None)
-        elif js['sql_type']==task_sql_insert_file:
+        elif js['sql_type']==sql_file_insert:
             task=task_sql_insert_file(None,None,None,None,None)
-        elif js['sql_type']==task_sql_insert_log:
+        elif js['sql_type']==sql_log_insert:
             task=task_sql_insert_log(None,None,None,None)
-        elif js['sql_type']==task_sql_update_path:
-            task=sql_device_update(None,None,None)
+        elif js['sql_type']==sql_path_update:
+            task=task_sql_update_path(None,None)
+        task.__dict__.update(js)
             
-        return task.__dict__.update(js)
+        return task
+    else:
+        return task_null()
             

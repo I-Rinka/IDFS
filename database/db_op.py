@@ -23,6 +23,24 @@ class DB_operation(object):
         for row in data:
             tq.DEVICE_TASK[row[0]] = queue.Queue(-1)
 
+    def lsfile(self, path: str):
+        self.cur.execute(
+            "SELECT file_name FROM File WHERE file_path='%s'" % (path))
+        data = self.cur.fetchall()
+        res = []
+        for row in data:
+            res.append(row[0])
+        return res
+
+    def lsdir(self, path: str):
+        self.cur.execute(
+            "SELECT dirname FROM Path WHERE parentPath='%s'" % (path))
+        data = self.cur.fetchall()
+        res = []
+        for row in data:
+            res.append(row[0])
+        return res
+
     def create_table(self):
         self.conn.execute("""
         CREATE TABLE IF NOT EXISTS File
@@ -67,7 +85,7 @@ class DB_operation(object):
         self.conn.commit()
 
     def commitFile(self, file_name, file_hash, file_time, file_path, is_board_cast: bool):
-        self.cur.execute("INSERT INTO File VALUES('%s', '%s',%s,'%s')" % (
+        self.cur.execute("INSERT OR REPLACE INTO File VALUES('%s', '%s',%s,'%s') " % (
             file_name, file_hash, str(file_time), file_path))
 
         self.conn.commit()
@@ -87,15 +105,10 @@ class DB_operation(object):
 
     def commitPath(self, base_path: str, is_board_cast: bool):
 
-        while True:
-            now_path = base_path
-            direct = ut.GetFileName(now_path)
-            pp = ut.GetBasePath(now_path)
-            self.cur.execute(
-                "INSERET INTO Path VALUES('%s','%s')" % direct, pp)
-            now_path = pp
-            if direct == '/':
-                break
+        exe = "INSERT OR REPLACE INTO Path VALUES('%s','%s')" % (
+            ut.GetFileName(base_path), ut.GetBasePath(base_path))
+        print(exe)
+        self.cur.execute(exe)
 
         self.conn.commit()
 
@@ -103,17 +116,18 @@ class DB_operation(object):
             self.cur.execute(
                 "SELECT device_id,device_ip FROM Device WHERE device_status='available'")
             data = self.cur.fetchall()
-
+            print(data)
             for row in data:
                 if ut.isServer():
+                    print("Server")
                     tq.DEVICE_TASK[row[0]] = tsk.task_sql_update_path(
-                        tsk.task_sql_update_path(ut.GetMyDeviceID()), base_path)
+                        tsk.task_sql_update_path(ut.GetMyDeviceID(), base_path), base_path)
                 else:
                     req.SendTask(
                         tsk.task_sql_update_path(ut.GetMyDeviceID(), base_path), row[1])
 
     def commitFileLog(self, file_hash: str, device_id: str, log_time: int, is_board_cast: bool):
-        self.cur.execute("INSERT INTO Log VALUES('%s', '%s',%s)" % (
+        self.cur.execute("INSERT OR REPLACE INTO Log VALUES('%s', '%s',%s)" % (
             file_hash, device_id, str(log_time)))
 
         if is_board_cast:
@@ -159,7 +173,7 @@ class DB_operation(object):
 
     def addDevice(self, device_id: str, device_status: str, device_name: str, deivce_ip: str):
         self.cur.execute(
-            "INSERT INTO Device VALUES('%s', '%s', '%s', '%s', '%s')" % (
+            "INSERT OR REPLACE INTO Device VALUES('%s', '%s', '%s', '%s')" % (
                 device_id, device_status, device_name, deivce_ip)
         )
         self.conn.commit()

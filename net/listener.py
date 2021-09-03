@@ -51,16 +51,23 @@ class Resquest(BaseHTTPRequestHandler):
 
                 self.wfile.write(fd.read().encode("utf8"))
 
-            else:
-                self.send_response(404)
+        else:
+            self.send_response(200)
+            auth = self.headers['Authorization']
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write("操了".encode("utf8"))
+            # self.send_response(404)
 
     def do_POST(self):
-        self.send_response(200)
 
+        self.send_response(200)
         self.send_header('Content-type', 'application/json')
         self.end_headers()
+        
 
         datas = self.rfile.read(int(self.headers['content-length']))
+        # print("post:%s"%datas.decode("utf8"))
 
         auth = self.headers['Authorization']
 
@@ -78,7 +85,8 @@ class Resquest(BaseHTTPRequestHandler):
             js=json.loads(datas.decode("utf8"))
             
             task=tsk.TaskJs2Obj(js)
-
+            print(task)
+            print("task")
             if isinstance(task,tsk.task_reg):
                 if not tsk.reg_dev_id == ut.GetMyDeviceID():
                     db.addDevice(tsk.reg_dev_id,tsk.dev_status,tsk.dev_name,tsk.dev_ip)

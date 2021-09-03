@@ -10,6 +10,9 @@ file_object = open("config/profile.json")
 file_json = file_object.read()
 profile_data = json.loads(file_json)
 
+MY_IP=socket.gethostbyname(socket.gethostname())
+
+IS_SERVER=False
 
 def GetTempPath():
     return tempfile.gettempdir().replace('\\', '/')
@@ -39,14 +42,14 @@ def GetMyDevName():
 
 
 def GetMyIP():
-    return socket.gethostbyname(socket.gethostname())
+    return MY_IP
 
 
 my_device_id = hashlib.md5(
     (GetMyDevName()+GetMyDeviceType()+GetMyOS()).encode('utf8')).hexdigest()
 
 def isServer():
-    return True
+    return IS_SERVER
 
 def GetMyDeviceID():
     return my_device_id
@@ -101,3 +104,11 @@ def GetIDFSPath(local_obsolute_path: str):
     if platform.system() == 'Windows':
         IDFS_path = IDFS_path.replace('\\', '/')
     return IDFS_path
+
+def GetFileContentHash(file_path):
+    md5_hash = hashlib.md5()
+    with open(file_path,"rb") as f:
+        # Read and update hash in chunks of 4K
+        for byte_block in iter(lambda: f.read(4096),b""):
+            md5_hash.update(byte_block)
+        return md5_hash.hexdigest()
