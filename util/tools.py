@@ -4,11 +4,16 @@ import socket
 import datetime
 import json
 import platform
+import tempfile
 
 file_object = open("config/profile.json")
 file_json = file_object.read()
 profile_data = json.loads(file_json)
 
+
+def GetTempPath():
+    return tempfile.gettempdir().replace('\\', '/')
+    
 
 def GetServerIP():
     return profile_data["server_address"]
@@ -40,6 +45,8 @@ def GetMyIP():
 my_device_id = hashlib.md5(
     (GetMyDevName()+GetMyDeviceType()+GetMyOS()).encode('utf8')).hexdigest()
 
+def isServer():
+    return True
 
 def GetMyDeviceID():
     return my_device_id

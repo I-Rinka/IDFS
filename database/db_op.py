@@ -1,12 +1,10 @@
 import sqlite3
 import hashlib
 import util.tools as ut
-
-sql_insert_dir = "INSERT INTO PATH VALUES('%s', '%s')"
-sql_get_chfile = "SELECT FILE.filename FROM FILE WHERE FILE.path='%s'"
-sql_get_chdir = "SELECT PATH.dirname FROM PATH WHERE PATH.parentPath='%s'"
-
-sql_get_device = "SELECT LOG.device FROM LOG,FILE WHERE FILE.hash=LOG.hash AND FILE.filename='%s' AND FILE.path='%s'"
+import local.task_queue as tq
+import queue
+import local.task as tsk
+import net.client_request as req
 
 
 class DB_operation(object):
@@ -17,6 +15,13 @@ class DB_operation(object):
         self.db_location = db_location
         self.conn = sqlite3.connect(db_location)
         self.cur = self.conn.cursor()
+
+        if ut.isServer():
+            self.cur.execute(
+                "SELECT device_id FROM Device")
+            data = self.cur.fetchall()
+            for row in data:
+                tq.DEVICE_TASK[row[0]] = queue.Queue(-1)
 
     def create_table(self):
         self.conn.execute("""
@@ -61,64 +66,106 @@ class DB_operation(object):
 
         self.conn.commit()
 
+    def commitFile(self, file_name, file_hash, file_time, file_path, is_board_cast: bool):
+        self.cur.execute("INSERT INTO File VALUES('%s', '%s',%s,'%s')" % (
+            file_name, file_hash, str(file_time), file_path))
+
+        self.conn.commit()
+
+        if is_board_cast:
+            self.cur.execute(
+                "SELECT device_id,device_ip FROM Device WHERE device_status='available'")
+            data = self.cur.fetchall()
+
+            for row in data:
+                if ut.isServer():
+                    tq.DEVICE_TASK[row[0]] = tsk.task_sql_insert_file(
+                        ut.GetMyDeviceID(), file_name, file_hash, file_time, file_path)
+                else:
+                    req.SendTask(tsk.task_sql_insert_file(
+                        ut.GetMyDeviceID(), file_name, file_hash, file_time, file_path), row[1])
+
+    def commitPath(self, base_path: str, is_board_cast: bool):
+
+        while True:
+            now_path = base_path
+            direct = ut.GetFileName(now_path)
+            pp = ut.GetBasePath(now_path)
+            self.cur.execute(
+                "INSERET INTO Path VALUES('%s','%s')" % direct, pp)
+            now_path = pp
+            if direct == '/':
+                break
+
+        self.conn.commit()
+
+        if is_board_cast:
+            self.cur.execute(
+                "SELECT device_id,device_ip FROM Device WHERE device_status='available'")
+            data = self.cur.fetchall()
+
+            for row in data:
+                if ut.isServer():
+                    tq.DEVICE_TASK[row[0]] = tsk.task_sql_update_path(
+                        tsk.task_sql_update_path(ut.GetMyDeviceID()), base_path)
+                else:
+                    req.SendTask(
+                        tsk.task_sql_update_path(ut.GetMyDeviceID(), base_path), row[1])
+
+    def commitFileLog(self, file_hash: str, device_id: str, log_time: int, is_board_cast: bool):
+        self.cur.execute("INSERT INTO Log VALUES('%s', '%s',%s)" % (
+            file_hash, device_id, str(log_time)))
+
+        if is_board_cast:
+            self.cur.execute(
+                "SELECT device_id,device_ip FROM Device WHERE device_status='available'")
+            data = self.cur.fetchall()
+
+            for row in data:
+                log_task = tsk.task_sql_insert_log(
+                    ut.GetMyDeviceID(), file_hash, device_id, log_time)
+                if ut.isServer():
+                    tq.DEVICE_TASK[row[0]] = log_task
+                else:
+                    req.SendTask(log_task, row[1])
+
+    def isFileExist(self, file_path):
+        file_name = ut.GetFileName(file_name)
+        file_path = ut.GetBasePath(file_name)
+        self.exe("select * from File where file_name=%s and file_path=%s")
+        if self.cur.fetchone is None:
+            return False
+        return True
+
+    def selectFileDevice(self, file_path: str, is_server: bool):
+        fpath = ut.GetBasePath(file_path)
+        fname = ut.GetFileName(file_path)
+        self.cur.execute("SELECT device_ip,device_id FROM Device,File,Log WHERE device_status='available' AND File.file_hash=Log.file_hash AND Log.device_id=Device.devicce_id AND File.path='%s' AND File.file_name='%s'" % (fpath, fname))
+        dev_list = []
+
+        for row in self.cur.fetchall():
+            if is_server:
+                dev_list.append(row[1])
+            else:
+                dev_list.append(row[0])
+        return dev_list
+
+    def selectNewestFileHash(self, file_path: str):
+        fpath = ut.GetBasePath(file_path)
+        fname = ut.GetFileName(file_path)
+        self.cur.execute(
+            "SELECT file_hash FROM File WHERE file_name='%s' AND file_path='%s'" % (fname, fpath))
+        return self.cur.fetchall()[0][0]
+
+    def addDevice(self, device_id: str, device_status: str, device_name: str, deivce_ip: str):
+        self.cur.execute(
+            "INSERT INTO Device VALUES('%s', '%s', '%s', '%s', '%s')" % (
+                device_id, device_status, device_name, deivce_ip)
+        )
+        self.conn.commit()
+
     def exe(self, op: str):
-        self.conn.execute(op)
-
-    def mkdir(self, cu_path: str, dir_name: str):
-        self.cur.execute("INSERT INTO PATH VALUES('%s', '%s')" %
-                         (dir_name, cu_path))
-
-    def lsfile(self, current_path: str):
-        self.cur.execute(
-            "SELECT FILE.filename FROM FILE WHERE FILE.path='%s'" % (current_path))
-        data = self.cur.fetchall()
-        res = []
-        for row in data:
-            res.append(row[0])
-        return res
-
-    def lsdir(self, current_path: str):
-        self.cur.execute(
-            "SELECT PATH.dirname FROM PATH WHERE PATH.parentPath='%s'" % (current_path))
-        data = self.cur.fetchall()
-        res = []
-        for row in data:
-            res.append(row[0])
-        return res
-
-    def put(self, file_name: str, current_path: str, device_id: str):
-        timestp = ut.GetIntTimeStamp()
-        file_hash = ut.GetFileHash(current_path+'/'+file_name)  # 这里应该是文件的记录才对
-        # file_hash = ut.GetFileHash(file_name, current_path, size)
-        self.cur.execute("INSERT INTO FILE VALUES('%s', '%s','%d','%d','%s')" %
-                         (file_name, current_path, timestp, '100', file_hash))
-        self.cur.execute("INSERT INTO LOG VALUES('%s', '%s','%s','%d')" %
-                         (file_hash, 'none', device_id, timestp))
-        # 删除老记录
-
-    def getDevice(self, file_name: str, file_path: str):
-        # file_hash = ut.GetFileHash(file_path+'/'+file_name)
-        # self.cur.execute( %
-        #                  (file_name, file_path))
-        # data = self.cur.fetchall()
-        # res = []
-        # for row in data:
-        #     res.append(row[0])
-        return res
-
-    def mkdir(self, dir_name: str, current_path: str):
-        self.cur.execute("INSERT INTO PATH VALUES('%s', '%s')" %
-                         (dir_name, current_path))
-
-    def delfile(self, file_name: str, file_path: str):
-        self.cur.execute(
-            "DELETE FROM FILE WHERE filename='%s' AND path='%s'" % (file_name, file_path))
-
-    def deldir(self, dir_name: str, parent_path: str):
-        self.cur.execute("DELETE FROM PATH WHERE PATH.dirname='%s' AND PATH.parentPath='%s'" % (
-            dir_name, parent_path))
-        self.cur.execute("DELETE FROM FILE WHERE path LIKE '%s'" %
-                         (ut.ConflatePath(parent_path, dir_name)))
+        self.cur.execute(op)
 
     def commit(self):
         self.conn.commit()
