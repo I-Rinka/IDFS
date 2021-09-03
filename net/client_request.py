@@ -11,11 +11,12 @@ port = str(ut.GetServerPort())
 def SendTask(task: tsk.base_task, ip: str):
     header = {"Authorization": "{}".format(
         ut.GetMyDeviceID()), "Operation": "{}".format("task")}
-    payload = json.dumps(task.toJson())
-    
+    print(task.__dict__)
+    payload = json.dumps(task.__dict__)
+    print(port)
     r = requests.post(protocal+ip+':'+port,
                       headers=header, data=payload)
-    # print(r.content)
+    print(r.content)
     return r.text
 
 def UploadFile(file_path: str, ip: str):

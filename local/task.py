@@ -3,10 +3,10 @@ import threading
 import queue
 import json
 
-task_null = "task_null"
-task_reg = "task_reg"
-task_upload_file = "task_upload"
-task_sql = "task_sql"
+ttype_null = "task_null"
+ttype_reg = "task_reg"
+ttype_upload_file = "task_upload"
+ttype_sql = "task_sql"
 
 
 sql_file_update = "sql_file_update"
@@ -24,9 +24,6 @@ class base_task(object):
         self.task_type = task_type
         self.requester_id = requester_id
 
-    def toJson(self):
-        return json.loads(TaskObj2Json(self))
-
 
 class task_null(base_task):
     """heart beat, do nothing"""
@@ -39,7 +36,7 @@ class task_reg(base_task):
     """docstring for task_reg."""
 
     def __init__(self, requester_id: str, reg_dev_id: str, dev_status: str, dev_name: str, dev_ip: str):
-        super(task_reg, self).__init__(task_reg, requester_id)
+        super(task_reg, self).__init__(ttype_reg, requester_id)
         self.requester_id = requester_id
         self.reg_dev_id = reg_dev_id
         self.dev_status = dev_status
