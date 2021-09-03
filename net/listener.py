@@ -36,9 +36,7 @@ class Resquest(BaseHTTPRequestHandler):
                 if ut.isServer():
                     device_list = db.selectFileDevice(file_path)  # 还没实现
                     for dev_id in device_list:
-                        tq.DEVICE_TASK[dev_id].put(tsk.task_upload)
-                        tsk.TASK_QUEUE.put(tsk.task_upload(
-                            ut.GetMyDeviceID(), file_path))
+                        tq.DEVICE_TASK[dev_id].put(tsk.task_upload(ut.GetMyDeviceID(),file_path))
 
                     sema = threading.Semaphore(0)
                     tsk.CLOG_LIST[name_hash] = sema
@@ -63,7 +61,7 @@ class Resquest(BaseHTTPRequestHandler):
         self.end_headers()
 
         datas = self.rfile.read(int(self.headers['content-length']))
-        print(datas)
+
         auth = self.headers['Authorization']
 
         if self.headers['Operation'] == 'upfile':
@@ -77,7 +75,31 @@ class Resquest(BaseHTTPRequestHandler):
                 tsk.CLOG_LIST[file_hash].release()
 
         elif self.headers['Operation'] == 'task':
-            print(datas)
+            js=json.loads(datas.decode("utf8"))
+            
+            task=tsk.TaskJs2Obj(js)
+
+            if isinstance(task,tsk.task_reg):
+                if not tsk.reg_dev_id == ut.GetMyDeviceID():
+                    db.addDevice(tsk.reg_dev_id,tsk.dev_status,tsk.dev_name,tsk.dev_ip)
+                print("reg")
+                
+            elif isinstance(task,tsk.task_sql):
+                print("sql")
+                if isinstance(task,tsk.task_sql_insert_file):
+                    print("file")
+                    db.commitFile(task.file_name,task.file_path,task.file_time,task.file_hash,ut.isServer())
+                elif isinstance(task,tsk.task_sql_insert_log):
+                    print("log")
+                    db.commitFileLog(task.file_hash,task.device_id,task.log_time,ut.isServer())
+                elif isinstance(task,tsk.task_sql_update_path):
+                    print("path")
+                    db.commitPath(task.base_path,ut.isServer())
+
+        if auth not in tq.DEVICE_TASK.keys() or tq.DEVICE_TASK[auth].empty() :
+            self.wfile.write(str(tsk.task_null(ut.GetMyDeviceID()).__dict__).encode("utf8"))
+        else:
+            self.wfile.write(str(tq.DEVICE_TASK[auth].get().__dict__).encode("utf8"))
             
 
 
@@ -85,6 +107,6 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """Handle requests in a separate thread."""
 
 
-LOCAL_SERVER = ThreadedHTTPServer(('localhost', ut.GetServerPort()), Resquest)
-print('Starting server, use <Ctrl-C> to stop')
+LOCAL_SERVER = ThreadedHTTPServer(('0.0.0.0', ut.GetServerPort()), Resquest)
+print('Starting server, use <Ctrl-C> to stop host:%s port:%s'%('0.0.0.0',ut.GetServerPort()))
 # server.serve_forever()
