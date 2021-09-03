@@ -16,12 +16,12 @@ class DB_operation(object):
         self.conn = sqlite3.connect(db_location)
         self.cur = self.conn.cursor()
 
-        if ut.isServer():
-            self.cur.execute(
-                "SELECT device_id FROM Device")
-            data = self.cur.fetchall()
-            for row in data:
-                tq.DEVICE_TASK[row[0]] = queue.Queue(-1)
+    def server_init_taskQ(self):
+        self.cur.execute(
+            "SELECT device_id FROM Device")
+        data = self.cur.fetchall()
+        for row in data:
+            tq.DEVICE_TASK[row[0]] = queue.Queue(-1)
 
     def create_table(self):
         self.conn.execute("""

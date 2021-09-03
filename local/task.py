@@ -50,9 +50,8 @@ class task_reg(base_task):
 class task_upload(base_task):
     """upload file to target"""
 
-    def __init__(self, requester_id: str, target_dev: dvc.Device, file_path: str):
+    def __init__(self, requester_id: str, file_path: str):
         super(task_upload, self).__init__("task_upload")
-        self.target_dev = target_dev
         self.file_path = file_path
 
 
@@ -116,8 +115,8 @@ def TaskJs2Obj(js):
     tt = js['task_type']
     if tt == 'task_null':
         return task_null()
-    elif tt == 'task_upload':
-        return task_upload(js['requester_id'], dvc.Device(js['target_dev']['device_name'], js['target_dev']['device_type'], js['target_dev']['device_os'], js['target_dev']['device_ip']), js['file_path'])
+    # elif tt == 'task_upload':
+        # return task_upload(js['requester_id'], dvc.Device(js['target_dev']['device_name'], js['target_dev']['device_type'], js['target_dev']['device_os'], js['target_dev']['device_ip']), js['file_path'])
     elif tt == task_sql:
         sql = js["sql_type"]
         if sql == sql_device_update:

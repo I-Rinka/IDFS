@@ -1,6 +1,5 @@
 import requests
 import util.tools as ut
-import local.device as dv
 import json
 import local.task as tsk
 
