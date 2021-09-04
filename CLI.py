@@ -6,8 +6,11 @@ import local.task as tsk
 import tempfile
 import net.client_request as req
 import net.listener as lsn
-
+import local.task_queue as tq
+import database.db_op as dbo
 from multiprocessing import Process
+
+db_op = dbo.DB_operation(ut.GetTempPath()+'/'+ut.GetMyDeviceID()+".db")
 
 def f(name):
     print('hello', name)
@@ -22,8 +25,10 @@ def loadhelp():
     """
 
 # threading.Thread(target=start_server,)
-p=Process(target=start_server,)
+p=threading.Thread(target=start_server,)
+t=threading.Thread(target=tq.task_exe,)
 p.start()
+t.start()
 
 global IDFS_root
 
@@ -32,8 +37,6 @@ server_id = ''
 
 
 tp = tempfile.gettempdir().replace('\\', '/')
-
-db_op = lsn.db
 
 ut.IS_SERVER = False
 
@@ -50,10 +53,7 @@ def get_child_item(db_op):
 
 if __name__ == "__main__":
 
-    db_op.addDevice("d5a466a038841ad4b4d849d40454be3c",
-                    'available', 'Y7000P-Octo-Rinka', '192.168.71.1')
-    db_op.addDevice("eb0858f16e80bea04bca908e080f2454",
-                    'available', 'ubuntu-server', '192.168.71.2')
+
 
     IDFS_root = ut.GetIDFSRoot()
     server_ip = ut.GetServerIP()
@@ -95,10 +95,11 @@ if __name__ == "__main__":
             if ut.GetMyOS() == 'Windows':
                 file_path = file_path.replace('\\', '/')
 
-            db_op.commitFile(ut.GetFileName(file_path), file_hash, os.path.getmtime(
-                file_path), current_path, True)
-            db_op.commitFileLog(file_hash, ut.GetMyDeviceID(),
-                                ut.GetIntTimeStamp(), True)
+            
+            tq.MY_TASK_QUEUE.put(tsk.task_sql_insert_file(ut.GetMyDeviceID(),ut.GetFileName(file_path),file_hash,os.path.getmtime(
+                file_path),current_path))
+
+            tq.MY_TASK_QUEUE.put(tsk.task_sql_insert_log(ut.GetMyDeviceID(),file_hash,ut.GetMyDeviceID(),ut.GetIntTimeStamp()))
 
             print("Put file %s\nHash:%s" % (file_path, file_hash))
 
@@ -114,7 +115,7 @@ if __name__ == "__main__":
 
         elif cmd == "mkdir":
             dir_name = op.split()[1]
-            db_op.commitPath(ut.ConflatePath('/', dir_name), True)
+            tq.MY_TASK_QUEUE.put(tsk.task_sql_update_path(ut.GetMyDeviceID(),ut.ConflatePath('/', dir_name)))
 
         elif cmd == "pwd":
             print(current_path)

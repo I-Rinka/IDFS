@@ -127,5 +127,5 @@ def TaskJs2Obj(js):
             
         return task
     else:
-        return task_null()
+        return task_null(js['requester_id'])
             

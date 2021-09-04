@@ -1,0 +1,2 @@
+CLOG_LIST = {}
+DEVICE_TASK = {}

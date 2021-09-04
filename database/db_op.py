@@ -1,7 +1,7 @@
 import sqlite3
 import hashlib
 import util.tools as ut
-import local.task_queue as tq
+import local.task_server_d as td
 import queue
 import local.task as tsk
 import net.client_request as req
@@ -13,7 +13,7 @@ class DB_operation(object):
     def __init__(self, db_location: str):
         super(DB_operation, self).__init__()
         self.db_location = db_location
-        self.conn = sqlite3.connect(db_location)
+        self.conn = sqlite3.connect(db_location, check_same_thread=False)
         self.cur = self.conn.cursor()
 
     def server_init_taskQ(self):
@@ -21,7 +21,7 @@ class DB_operation(object):
             "SELECT device_id FROM Device")
         data = self.cur.fetchall()
         for row in data:
-            tq.DEVICE_TASK[row[0]] = queue.Queue(-1)
+            td.DEVICE_TASK[row[0]] = queue.Queue(-1)
 
     def lsfile(self, path: str):
         self.cur.execute(
@@ -85,6 +85,10 @@ class DB_operation(object):
         self.conn.commit()
 
     def commitFile(self, file_name, file_hash, file_time, file_path, is_board_cast: bool):
+        # self.cur.execute("SELECT ISNULL((SELECT top(1) 1 from File WHERE file_name=%s,file_hash=%s,file_time=%s,file_path=%s), 0)"%(
+        #     file_name, file_hash, str(file_time), file_path
+        # ))
+
         self.cur.execute("INSERT OR REPLACE INTO File VALUES('%s', '%s',%s,'%s') " % (
             file_name, file_hash, str(file_time), file_path))
 
@@ -97,20 +101,40 @@ class DB_operation(object):
 
             for row in data:
                 if ut.isServer():
-                    tq.DEVICE_TASK[row[0]] = tsk.task_sql_insert_file(
+                    td.DEVICE_TASK[row[0]] = tsk.task_sql_insert_file(
                         ut.GetMyDeviceID(), file_name, file_hash, file_time, file_path)
                 else:
                     req.SendTask(tsk.task_sql_insert_file(
                         ut.GetMyDeviceID(), file_name, file_hash, file_time, file_path), row[1])
 
-    def commitPath(self, base_path: str, is_board_cast: bool):
+    def commitPath(self, base_path: str):
 
-        exe = "INSERT OR REPLACE INTO Path VALUES('%s','%s')" % (
-            ut.GetFileName(base_path), ut.GetBasePath(base_path))
-        print(exe)
-        self.cur.execute(exe)
+        dirname = ut.GetFileName(base_path)
+        basepath = ut.GetBasePath(base_path)
+
+        self.cur.execute("SELECT EXISTS(SELECT 1 FROM Path WHERE dirname='%s' AND parentPath='%s')" % (
+            dirname, base_path))
+
+        is_board_cast = False
+        res = self.cur.fetchone()
+        
+        print(res)
+        if res[0] > 0:
+            print("Found!")
+        else:
+            print("Not found...")
+            exe = "INSERT OR REPLACE INTO Path VALUES('%s','%s')" % (
+                ut.GetFileName(base_path), ut.GetBasePath(base_path))
+            print(exe)
+            self.cur.execute(exe)
+            is_board_cast = True
 
         self.conn.commit()
+        # is_board_cast
+        # print("board cast:")
+        # print(is_board_cast)
+            # exe = "INSERT OR REPLACE INTO Path VALUES('%s','%s')" % (
+            #     ut.GetFileName(base_path), ut.GetBasePath(base_path))
 
         if is_board_cast:
             self.cur.execute(
@@ -120,7 +144,7 @@ class DB_operation(object):
             for row in data:
                 if ut.isServer():
                     print("Server")
-                    tq.DEVICE_TASK[row[0]] = tsk.task_sql_update_path(
+                    td.DEVICE_TASK[row[0]] = tsk.task_sql_update_path(
                         tsk.task_sql_update_path(ut.GetMyDeviceID(), base_path), base_path)
                 else:
                     req.SendTask(
@@ -139,7 +163,7 @@ class DB_operation(object):
                 log_task = tsk.task_sql_insert_log(
                     ut.GetMyDeviceID(), file_hash, device_id, log_time)
                 if ut.isServer():
-                    tq.DEVICE_TASK[row[0]] = log_task
+                    td.DEVICE_TASK[row[0]] = log_task
                 else:
                     req.SendTask(log_task, row[1])
 
