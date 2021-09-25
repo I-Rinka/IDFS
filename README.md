@@ -1,2 +1,0 @@
-# IDFS
-Individual file system
