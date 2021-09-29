@@ -34,7 +34,7 @@ class rqdb(object):
             self.rq_process = None
 
     def create_tables(self):
-        if self.is_start:
+        if self.is_start and self.connection is not None:
             try:
                 with self.connection.cursor() as cursor:
                     cursor.execute(  # file table
@@ -85,7 +85,7 @@ class rqdb(object):
                 pass
 
     def add_device(self, device_id: str):
-        if self.is_start:
+        if self.is_start and self.connection is not None:
             try:
                 with self.connection.cursor() as cursor:
                     cursor.execute(
@@ -97,7 +97,7 @@ class rqdb(object):
                 pass
 
     def offline_device(self, device_id: str):
-        if self.is_start:
+        if self.is_start and self.connection is not None:
             try:
                 with self.connection.cursor() as cursor:
                     cursor.execute(
@@ -111,15 +111,18 @@ class rqdb(object):
                 pass
 
     def upload_file(self, file_name: str, IDFS_path: str, file_time: int, content_hash: str):
-        if self.is_start:
+        if self.is_start and self.connection is not None:
             try:
                 with self.connection.cursor() as cursor:
-                    cursor.execute(  # file table
+                    print("""
+                        INSERT OR REPLACE INTO file_table VALUES('{filename}','{path}',{timestamp},'{contenthash}');
+                        """.format(filename=file_name, path=IDFS_path, timestamp=file_time, contenthash=content_hash))
+                    cursor.execute(
                         """
                         INSERT OR REPLACE INTO file_table VALUES('{filename}','{path}',{timestamp},'{contenthash}');
                         """.format(filename=file_name, path=IDFS_path, timestamp=file_time, contenthash=content_hash)
                     )
-                    cursor.execute(  # path table
+                    cursor.execute(
                         """
                         INSERT OR REPLACE INTO log_table(deviceid,timestamp,filename,path,contenthash) VALUES ('{myid}',{logtime},'{filename}','{path}','{contenthash}');
                         """.format(myid=self.my_id, logtime=int(time.time()), filename=file_name, path=IDFS_path, contenthash=content_hash)
@@ -128,7 +131,7 @@ class rqdb(object):
                 pass
 
     def download_file(self, file_name: str, IDFS_path: str, content_hash: str):
-        if self.is_start:
+        if self.is_start and self.connection is not None:
             try:
                 with self.connection.cursor() as cursor:
                     cursor.execute(  # file table
@@ -140,7 +143,7 @@ class rqdb(object):
                 pass
 
     def get_available_device(self, file_name: str, IDFS_path: str):
-        if self.is_start:
+        if self.is_start and self.connection is not None:
             try:
                 with self.connection.cursor() as cursor:
                     cursor.execute(  # file table

@@ -12,8 +12,6 @@ import cgi
 import re
 import tempfile
 import logging
-
-import task as tsk
 import util as ut
 
 logging.basicConfig(level=logging.WARN)
@@ -74,7 +72,6 @@ class Resquest(BaseHTTPRequestHandler):
 
         try:
             task_type = self.headers['task_type']
-            assert (task_type in tsk.local_task_type), "task not in type"
         except:
             logging.WARN("task request error")
         else:
