@@ -74,10 +74,13 @@ class rqdb(object):
                         CREATE TABLE IF NOT EXISTS device_table(
                         deviceid        TEXT     NOT NULL PRIMARY KEY,  
                         status    TEXT     NOT NULL,  
-                        lasttime        INT      NOT NULL
+                        lasttime        INT      NOT NULL,
+                        deviceip    TEXT
                         );
                         """
                     )
+            except:
+                pass
             finally:
                 pass
 
@@ -87,8 +90,8 @@ class rqdb(object):
                 with self.connection.cursor() as cursor:
                     cursor.execute(
                         """
-                        INSERT OR REPLACE INTO device_table VALUES('{deviceid}','available',{lasttime});
-                        """.format(deviceid=device_id, lasttime=int(time.time()))
+                        INSERT OR REPLACE INTO device_table VALUES('{deviceid}','available',{lasttime},'{myip}');
+                        """.format(deviceid=device_id, lasttime=int(time.time()),myip=self.host)
                     )
             finally:
                 pass
@@ -133,12 +136,6 @@ class rqdb(object):
                         INSERT OR REPLACE INTO log_table(deviceid,timestamp,filename,path,contenthash) VALUES ('{myid}',{logtime},"{filename}","{filepath}",'{contenthash}');
                         """.format(myid=self.my_id, filename=file_name, path=IDFS_path, logtime=int(time.time()), contenthash=content_hash)
                     )
-                    # tmp
-                    # cursor.execute(  # file table
-                    #     """
-                    #     INSERT OR REPLACE INTO log_table(deviceid,timestamp,filename,path,contenthash) VALUES ('5687c2afc8b234501bf19ccab6ed0c0bc',{logtime},"{filename}","{filepath}",'{contenthash}');
-                    #     """.format(filename=file_name, path=IDFS_path, logtime=int(time.time()), contenthash=content_hash)
-                    # )
             finally:
                 pass
 
@@ -157,7 +154,7 @@ class rqdb(object):
                     dv_dic=[]
                     if dic is not None:
                         for line in dic:
-                            dv_dic.append(line[0])
+                            dv_dic.append(line[3])
                     return dv_dic
             finally:
                 pass
