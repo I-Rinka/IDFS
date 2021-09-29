@@ -2,7 +2,7 @@ my_ip="172.26.96.1"
 server_ip=""
 raft_port=17777
 rqlite_port=17778
-IDFS_port=17779
+IDFS_port=12996
 
 import client.db as dbo
 import client.UI as UI

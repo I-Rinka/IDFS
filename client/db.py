@@ -114,9 +114,6 @@ class rqdb(object):
         if self.is_start and self.connection is not None:
             try:
                 with self.connection.cursor() as cursor:
-                    print("""
-                        INSERT OR REPLACE INTO file_table VALUES('{filename}','{path}',{timestamp},'{contenthash}');
-                        """.format(filename=file_name, path=IDFS_path, timestamp=file_time, contenthash=content_hash))
                     cursor.execute(
                         """
                         INSERT OR REPLACE INTO file_table VALUES('{filename}','{path}',{timestamp},'{contenthash}');
@@ -148,16 +145,20 @@ class rqdb(object):
                 with self.connection.cursor() as cursor:
                     cursor.execute(  # file table
                         """
-                        SELECT device_table.* FROM log_table,device_table WHERE device_table.status='available' AND log_table.filename="{filename}" AND log_table.path="{path}" AND log_table.deviceid=device_table.deviceid
+                        SELECT device_table.*,log_table.contenthash FROM log_table,device_table WHERE device_table.status='available' AND log_table.filename="{filename}" AND log_table.path="{path}" AND log_table.deviceid=device_table.deviceid
                         ORDER BY log_table.timestamp DESC;
                         """.format(filename=file_name, path=IDFS_path)
                     )
                     dic=cursor.fetchall()
                     # return dic
-                    dv_dic=[]
+                    dv_id=[]
+                    dv_ip=[]
+                    dv_file_hash=[]
                     if dic is not None:
                         for line in dic:
-                            dv_dic.append(line[3])
-                    return dv_dic
+                            dv_id.append(line[0])
+                            dv_ip.append(line[3])
+                            dv_ip.append(line[4])
+                    return dv_id,dv_ip,dv_file_hash
             finally:
                 pass

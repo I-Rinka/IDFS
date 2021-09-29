@@ -2,6 +2,8 @@ import socket
 import client.db
 import util as ut
 import os
+import shutil
+import client.get_file as get
 
 
 class client_CLI(object):
@@ -13,6 +15,7 @@ class client_CLI(object):
             my_IP = socket.gethostbyname(socket.gethostname())
         self.IP = my_IP
         self.db: client.db.rqdb = db
+        self.IDFS_root = IDFS_root
 # current path和本机路径合体的时候注意，要把current path的'/'去掉，用current_path[1:]
 # os.path.join('C:\\Users\\I_Rin\\Desktop\\IDFS\\files\\'.replace('\\','/'),'haha/xing')]
 
@@ -39,19 +42,27 @@ class client_CLI(object):
                     file_path = input("input file path:")
 
                 if os.path.isfile(file_path):
-                    file_name=os.path.basename(file_path)
+                    file_name = os.path.basename(file_path)
                     content_hash = ut.GetFileContentHash(file_path)
-                    self.db.upload_file(file_name,current_path,os.stat(file_path).st_mtime,content_hash)
+                    self.db.upload_file(file_name, current_path, os.stat(
+                        file_path).st_mtime, content_hash)
+                    shutil.copy(file_path, os.path.join(
+                        self.IDFS_root, content_hash))
                     # not using path hash any more, just using content hash
-                    print("commit file {filehash}".format(filehash=content_hash))
+                    print("commit file {filehash}".format(
+                        filehash=content_hash))
 
                 else:
                     print("file not exist!")
 
-                # 名字 idfs路径 时间戳 哈希
-
             elif cmd == "get":
-                pass
+                if len(op.split()) > 1:
+                    file_path = op.split()[1]
+                else:
+                    file_path = input("input file path:")
+                id_list, ip_list, file_list = self.db.get_available_device(
+                    os.path.basename(file_path), os.path.dirname(file_path))
+                get.get_thread(self.db,id_list, ip_list, file_list, file_path)
 
             elif cmd == "pwd":
                 print(current_path)
