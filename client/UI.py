@@ -22,6 +22,7 @@ class client_CLI(object):
     def start_cli(self):
         current_path = '/'
         server_ip = ""
+
         while True:
             print("~>", end=" ")
             op = input()
@@ -33,7 +34,7 @@ class client_CLI(object):
                 pass
 
             if cmd == "connect":
-                server_ip = input("input server ip:\n")
+                pass
 
             elif cmd == "put":
                 if len(op.split()) > 1:

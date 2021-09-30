@@ -24,10 +24,14 @@ def get_thread(db,id_list:list, ip_list:list, file_list:list, file_path:str):
             try:
                 rq = requests.get("http://"+ip+":"+str(conf.IDFS_port) +
                                   "/"+file_hash, timeout=(1, None),headers=header)
-                f=open(conf.IDFS_root+'/'+file_hash,'wb+')
-                f.write(rq.content)
-                print("receive file:{path}".format(path=file_path))
-                have_get=True
+                if rq.status_code==200:
+                    f=open(conf.IDFS_root+'/'+file_hash,'wb+')
+                    f.write(rq.content)
+                    print("receive file:{path}".format(path=file_path))
+                    have_get=True
+                else:
+                    print("in future, this log will delete")
+                    
             except Exception as e:
                 print(e)
                 if isinstance(db, dbo.rqdb):

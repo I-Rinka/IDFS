@@ -4,6 +4,8 @@ import tempfile
 import util
 import time
 import sys
+import client.config as conf
+import random
 
 
 class rqdb(object):
@@ -16,11 +18,16 @@ class rqdb(object):
         self.host = host
         self.connection = None
         self.my_id = util.GetMyID()
-        self.rqlited_path = "C:/Users/I_Rin/rqlited.exe"
+        self.rqlited_path = conf.rqlited_path
 
-    def start_db(self, raft_port: int, http_port: int):
+    def start_db(self):
         self.rq_process = subprocess.Popen([self.rqlited_path, '-raft-addr',
-                                            self.host+':'+raft_port.__str__(), '-http-addr', self.host+':'+http_port.__str__(), "rqlite.log"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
+                                            self.host+':'+conf.raft_port.__str__(), '-http-addr', self.host+':'+conf.rqlite_port.__str__(), "{file}.log".format(file=random.randint(1, 100))], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
+        self.is_start = True
+
+    def join_db(self, host: str, rqlite_port: int):
+        self.rq_process = subprocess.Popen([self.rqlited_path, '-raft-addr',
+                                            self.host+':'+conf.raft_port.__str__(), '-http-addr', self.host+':'+conf.rqlite_port.__str__(), "-join", "http://"+host+":"+rqlite_port, "{file}.log".format(file=random.randint(1, 100))], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
         self.is_start = True
 
     def connect_db(self, host: str, http_port: int):
@@ -91,7 +98,7 @@ class rqdb(object):
                     cursor.execute(
                         """
                         INSERT OR REPLACE INTO device_table VALUES('{deviceid}','available',{lasttime},'{myip}');
-                        """.format(deviceid=device_id, lasttime=int(time.time()),myip=self.host)
+                        """.format(deviceid=device_id, lasttime=int(time.time()), myip=self.host)
                     )
             finally:
                 pass
@@ -149,16 +156,16 @@ class rqdb(object):
                         ORDER BY log_table.timestamp DESC;
                         """.format(filename=file_name, path=IDFS_path)
                     )
-                    dic=cursor.fetchall()
+                    dic = cursor.fetchall()
                     # return dic
-                    dv_id=[]
-                    dv_ip=[]
-                    dv_file_hash=[]
+                    dv_id = []
+                    dv_ip = []
+                    dv_file_hash = []
                     if dic is not None:
                         for line in dic:
                             dv_id.append(line[0])
                             dv_ip.append(line[3])
                             dv_ip.append(line[4])
-                    return dv_id,dv_ip,dv_file_hash
+                    return dv_id, dv_ip, dv_file_hash
             finally:
                 pass

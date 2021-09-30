@@ -13,10 +13,13 @@ import re
 import tempfile
 import logging
 import util as ut
+import requests
+import client.config as conf
+import client.db as abo
 
 logging.basicConfig(level=logging.WARN)
 
-server_instance=None
+db_op:abo.rqdb = None
 
 def task_null_handler(device_id: str):
     # select device from database
@@ -25,43 +28,57 @@ def task_null_handler(device_id: str):
 
 def task_getfile_handler(IDFS_path: str):
     print("task_getfile:"+IDFS_path)
-    print("idfs_addr:"+os.path.join("IDFS",ut.GetFileHash(IDFS_path)))
+    print("idfs_addr:"+os.path.join("IDFS", ut.GetFileHash(IDFS_path)))
 
 
 def task_postfile_handler(IDFS_path: str):
     print("task_postfile:"+IDFS_path)
 
 
-def task_stop_handler():
-    print("stop")
-    if server_instance is not None:
-        server_instance.server_close()
-
-
 class Resquest(BaseHTTPRequestHandler):
     def do_GET(self):
         file_path = urllib.parse.unquote(self.path)  # url path
         print(file_path)
-        file_hash=ut.GetFileHash(file_path)
+        file_hash = ut.GetFileHash(file_path)
 
         auth = self.headers['Authorization']
 
         if auth is not None:
-            task_null_handler(auth)
+            if db_op is not None:
+                db_op.add_device(auth)
+            else:
+                print("database not exist!")
 
-        if os.path.isfile(os.path.join("IDFS",file_hash)):
+        if self.headers['Operation']=="get_file":
+            my_file_path=os.path.join(conf.IDFS_root.replace('\\','/'), file_hash)
+            if os.path.isfile(my_file_path): # file exists and return file
+                print("upload file {myfile}".format(myfile=my_file_path))
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                fd=open(my_file_path,'wb+')
+                self.end_headers()
+                self.wfile.write(fd.read())
+            else: # file not found
+                self.send_response(404)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+            
+        elif self.headers['Operation']=='null': # register
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
-            self.wfile.write("有！".encode("utf8"))
+            return_str=json.dumps({
+                "raft_port":conf.raft_port,
+                "http_port":conf.rqlite_port
+            })
+            self.wfile.write(return_str.encode("utf8"))
+
         else:
             self.send_response(404)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
-            self.wfile.write("not found".encode("utf8"))
+            self.wfile.write("file not found".encode("utf8"))
 
-        
- 
 
     def do_POST(self):
         self.send_response(200)
@@ -80,7 +97,6 @@ class Resquest(BaseHTTPRequestHandler):
             elif task_type == "stop":
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
-                task_stop_handler()
 
         try:
             auth = self.headers['Authorization']
@@ -88,7 +104,6 @@ class Resquest(BaseHTTPRequestHandler):
             print("no auth")
         else:
             task_null_handler(auth)
-            
 
         self.send_header('Content-type', 'application/json')
         self.end_headers()
@@ -98,7 +113,22 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """Handle requests in a separate thread."""
 
 
-# LOCAL_SERVER = ThreadedHTTPServer(('0.0.0.0', ut.GetServerPort()), Resquest)
-# print('Starting server, use <Ctrl-C> to stop host:%s port:%s' %
-#       ('0.0.0.0', ut.GetServerPort()))
-# server.serve_forever()
+class http_server(object):
+    """docstring for http_server."""
+
+    def __init__(self, db: dbo.rqdb):
+        super(http_server, self).__init__()
+        self.server_instance = ThreadedHTTPServer(
+            ('0.0.0.0', conf.IDFS_port), Resquest)
+        db_op=db
+        self.server_thread:threading.Thread=None
+
+    def start_server(self):
+        self.server_thread=threading.Thread(target=self.server_instance.serve_forever,)
+        self.server_thread.start()
+    
+    def stop_server(self):
+        if self.server_instance is not None:
+            self.server_instance.server_close()
+        if self.server_thread is not None:
+            self.server_thread._stop()
