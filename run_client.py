@@ -8,10 +8,15 @@ import client.config as conf
 import requests
 import json
 import time
+import client.back_thread as back_thread
+import threading
 
 connect_type = input("connect server | client | none ?\n")
+# connect server means not runing database
 
-if connect_type == "no":
+has_database = True
+
+if connect_type == "none":
     rqlite = dbo.rqdb(conf.my_ip)
     rqlite.start_db()
     rqlite.connect_db(conf.my_ip, conf.rqlite_port)
@@ -27,6 +32,8 @@ if connect_type == "no":
 
     rqlite.add_device(ut.GetMyID())
     # IP=conf.my_ip
+elif connect_type == "server":
+    has_database = False
 else:
     IP = input("input IP:\n")
     header = {"Content-Type": "file", "Authorization": "{}".format(
@@ -52,8 +59,13 @@ else:
                 break
         # join db
 
-server = http_server.http_server(rqlite)
-server.start_server()
+if has_database:
+    server = http_server.http_server(rqlite)
+    server.start_server()
 
-CLI = UI.client_CLI(rqlite, conf.IDFS_root, conf.my_ip)
-CLI.start_cli()
+    CLI = UI.client_CLI(rqlite, conf.IDFS_root, conf.my_ip)
+    CLI.start_cli()
+    # threading.Thread(target=back_thread.back_thread,).start()
+    
+else:
+    back_thread.back_thread()
