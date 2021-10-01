@@ -9,6 +9,12 @@
             "type": "python",
             "request": "launch",
             "module": "test.test"
+        },
+        {
+            "name": "client",
+            "type": "python",
+            "request": "launch",
+            "module": "run_client"
         }
     ]
 }

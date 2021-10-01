@@ -1,3 +1,4 @@
+import os
 import pyrqlite.dbapi2 as rqapi
 import subprocess
 import tempfile
@@ -21,13 +22,17 @@ class rqdb(object):
         self.rqlited_path = conf.rqlited_path
 
     def start_db(self):
+        # self.rq_process = subprocess.Popen([self.rqlited_path, '-raft-addr',
+        #                                     self.host+':'+conf.raft_port.__str__(), '-http-addr', self.host+':'+conf.rqlite_port.__str__(), "{file}.log".format(file=random.randint(1, 100))], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
         self.rq_process = subprocess.Popen([self.rqlited_path, '-raft-addr',
-                                            self.host+':'+conf.raft_port.__str__(), '-http-addr', self.host+':'+conf.rqlite_port.__str__(), "{file}.log".format(file=random.randint(1, 100))], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
+                                            self.host+':'+conf.raft_port.__str__(), '-http-addr', self.host+':'+conf.rqlite_port.__str__(), "{file}.log".format(file="my")], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
         self.is_start = True
 
     def join_db(self, host: str, rqlite_port: int):
+        # self.rq_process = subprocess.Popen([self.rqlited_path, '-raft-addr',
+        #                                     self.host+':'+conf.raft_port.__str__(), '-http-addr', self.host+':'+conf.rqlite_port.__str__(), "-join", "http://"+host+":"+rqlite_port, "{file}.log".format(file=random.randint(1, 100))], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
         self.rq_process = subprocess.Popen([self.rqlited_path, '-raft-addr',
-                                            self.host+':'+conf.raft_port.__str__(), '-http-addr', self.host+':'+conf.rqlite_port.__str__(), "-join", "http://"+host+":"+rqlite_port, "{file}.log".format(file=random.randint(1, 100))], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
+                                            self.host+':'+conf.raft_port.__str__(), '-http-addr', self.host+':'+conf.rqlite_port.__str__(), "-join", "http://"+host+":"+rqlite_port, "{file}.log".format(file="my_join")], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
         self.is_start = True
 
     def connect_db(self, host: str, http_port: int):
@@ -98,8 +103,11 @@ class rqdb(object):
                     cursor.execute(
                         """
                         INSERT OR REPLACE INTO device_table VALUES('{deviceid}','available',{lasttime},'{myip}');
-                        """.format(deviceid=device_id, lasttime=int(time.time()), myip=self.host)
+                        """.format(deviceid=device_id, lasttime=str(int(time.time())), myip=conf.my_ip)
                     )
+            except Exception as e:
+                print(e)
+                raise(Exception("not connect"))
             finally:
                 pass
 
@@ -165,7 +173,50 @@ class rqdb(object):
                         for line in dic:
                             dv_id.append(line[0])
                             dv_ip.append(line[3])
-                            dv_ip.append(line[4])
+                            dv_file_hash.append(line[4])
                     return dv_id, dv_ip, dv_file_hash
             finally:
                 pass
+    
+    # def get_dir_file(self,file_path:str):
+    #     if self.is_start and self.connection is not None:
+    #         try:
+    #             with self.connection.cursor() as cursor:
+    #                 cursor.execute(
+    #                     """
+    #                     SELECT filename FROM file_table WHERE path='{path}'
+    #                     """.format(path=file_path)
+    #                 )
+    #                 dic=cursor.fetchall()
+    #                 files=[]
+    #                 if dic is not None:
+    #                     for line in dic:
+    #                         files.append(line[0])
+    #                 cursor.execute(
+    #                     """
+    #                     SELECT dirname FROM path_table WHERE parentdir='{path}'
+    #                     """.format(path=file_path)
+    #                 )
+    #                 dic=cursor.fetchall()
+    #                 files=[]
+    #                 if dic is not None:
+    #                     for line in dic:
+    #                         files.append(line[0])
+
+    def get_all_file(self):
+        if self.is_start and self.connection is not None:
+            try:
+                with self.connection.cursor() as cursor:
+                    cursor.execute(
+                        """
+                        SELECT filename,path FROM file_table
+                        """
+                    )
+                    dic=cursor.fetchall()
+                    files=[]
+                    for line in dic:
+                        files.append(os.path.join(line[1],line[0]))
+                    return files
+            except:
+                print("error")
+            

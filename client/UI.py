@@ -35,7 +35,8 @@ class client_CLI(object):
 
             if cmd == "connect":
                 pass
-
+            elif cmd=='ls':
+                print(self.db.get_all_file())
             elif cmd == "put":
                 if len(op.split()) > 1:
                     file_path = op.split()[1]
@@ -61,9 +62,7 @@ class client_CLI(object):
                     file_path = op.split()[1]
                 else:
                     file_path = input("input file path:")
-                id_list, ip_list, file_list = self.db.get_available_device(
-                    os.path.basename(file_path), os.path.dirname(file_path))
-                get.get_thread(self.db,id_list, ip_list, file_list, file_path)
+                get.get_thread(self.db, file_path)
 
             elif cmd == "pwd":
                 print(current_path)

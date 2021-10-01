@@ -3,12 +3,24 @@ import threading
 import requests
 import util as ut
 import client.config as conf
+import os
 
 def request_cloud():
     print("remote access")
 
 
-def get_thread(db,id_list:list, ip_list:list, file_list:list, file_path:str):
+def get_thread(db,file_path:str):
+    id_list, ip_list, file_list = db.get_available_device(
+                    os.path.basename(file_path), os.path.dirname(file_path))
+    print(id_list)
+    print(ip_list)
+    print(file_list)
+
+    # myfile=os.path.join(conf.IDFS_root.replace('\\','/'),file_path)
+    # print(myfile)
+    # if os.path.isfile(myfile):
+    #     return True
+    
     header = {"Content-Type": "file", "Authorization": "{}".format(
     ut.GetMyID()), "Operation": "{}".format("get_file")}
     if len(id_list) == 0:
@@ -21,6 +33,12 @@ def get_thread(db,id_list:list, ip_list:list, file_list:list, file_path:str):
             ip = ip_list[i]
             dv_id = id_list[i]
             file_hash = file_list[i]
+            if os.path.isfile(os.path.join(conf.IDFS_root.replace('\\','/'+'/'),file_hash)):
+                print("File {file} exists!".format(file=file_path))
+                have_get=True
+                continue
+            if ip==conf.my_ip:
+                continue
             try:
                 rq = requests.get("http://"+ip+":"+str(conf.IDFS_port) +
                                   "/"+file_hash, timeout=(1, None),headers=header)
