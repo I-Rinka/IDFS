@@ -32,7 +32,7 @@ class rqdb(object):
         # self.rq_process = subprocess.Popen([self.rqlited_path, '-raft-addr',
         #                                     self.host+':'+conf.raft_port.__str__(), '-http-addr', self.host+':'+conf.rqlite_port.__str__(), "-join", "http://"+host+":"+rqlite_port, "{file}.log".format(file=random.randint(1, 100))], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
         self.rq_process = subprocess.Popen([self.rqlited_path, '-raft-addr',
-                                            self.host+':'+conf.raft_port.__str__(), '-http-addr', self.host+':'+conf.rqlite_port.__str__(), "-join", "http://"+host+":"+rqlite_port, "{file}.log".format(file="my_join")], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
+                                            self.host+':'+conf.raft_port.__str__(), '-http-addr', self.host+':'+conf.rqlite_port.__str__(), "-join", "http://"+host+":"+rqlite_port.__str__(), "{file}.log".format(file="my_join")], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
         self.is_start = True
 
     def connect_db(self, host: str, http_port: int):
@@ -92,7 +92,7 @@ class rqdb(object):
                         """
                     )
             except:
-                pass
+                raise("Not connect")
             finally:
                 pass
 
@@ -105,9 +105,6 @@ class rqdb(object):
                         INSERT OR REPLACE INTO device_table VALUES('{deviceid}','available',{lasttime},'{myip}');
                         """.format(deviceid=device_id, lasttime=str(int(time.time())), myip=conf.my_ip)
                     )
-            except Exception as e:
-                print(e)
-                raise(Exception("not connect"))
             finally:
                 pass
 

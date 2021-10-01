@@ -9,44 +9,51 @@ import requests
 import json
 import time
 
-connect_type = input("connect server | client | no ?\n")
+connect_type = input("connect server | client | none ?\n")
 
-if connect_type=="no":
-    rqlite=dbo.rqdb(conf.my_ip)
+if connect_type == "no":
+    rqlite = dbo.rqdb(conf.my_ip)
     rqlite.start_db()
-    rqlite.connect_db(conf.my_ip,conf.rqlite_port)
+    rqlite.connect_db(conf.my_ip, conf.rqlite_port)
     # time.sleep(1)
     while True:
         try:
             rqlite.create_tables()
-        except Exception as e:
-            print(e)
+        except:
+            print("not connect, connecting...")
+            time.sleep(0.5)
         else:
             break
 
-    
     rqlite.add_device(ut.GetMyID())
     # IP=conf.my_ip
 else:
-    IP=input("input IP:\n")
+    IP = input("input IP:\n")
     header = {"Content-Type": "file", "Authorization": "{}".format(
-    ut.GetMyID()), "Operation": "{}".format("get_file")}
-    if connect_type=="client":
-        rq=requests.get("http://"+IP+':'+str(conf.IDFS_port),timeout=(1,None),headers=header)
-        js=rq.content.decode("utf8")
-        dic=json.loads(js)
-        raft_port=dic["raft_port"]
-        rqlite_port=dic["http_port"]
+        ut.GetMyID()), "Operation": "{}".format("null")}
+    if connect_type == "client":
+        rq = requests.get("http://"+IP+':'+str(conf.IDFS_port),
+                          timeout=(1, None), headers=header)
+        js = rq.content.decode("utf8")
+        dic = json.loads(js)
+        raft_port = dic["raft_port"]
+        rqlite_port = dic["http_port"]
 
-        rqlite=dbo.rqdb(conf.my_ip)
-        rqlite.join_db(IP,rqlite_port)
-        rqlite.connect_db(conf.my_ip,conf.rqlite_port)
-        print(raft_port)
-        print(rqlite_port)
+        rqlite = dbo.rqdb(conf.my_ip)
+        rqlite.join_db(IP, rqlite_port)
+        rqlite.connect_db(conf.my_ip, conf.rqlite_port)
+        while True:
+            try:
+                rqlite.add_device(ut.GetMyID())
+            except:
+                print("connecting..")
+                time.sleep(1)
+            else:
+                break
         # join db
 
-server=http_server.http_server(rqlite)
+server = http_server.http_server(rqlite)
 server.start_server()
 
-CLI=UI.client_CLI(rqlite,conf.IDFS_root,conf.my_ip)
+CLI = UI.client_CLI(rqlite, conf.IDFS_root, conf.my_ip)
 CLI.start_cli()

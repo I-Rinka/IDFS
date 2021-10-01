@@ -31,7 +31,10 @@ class client_CLI(object):
                 cmd = op.split()[0]
 
             if cmd == "help" or cmd == "?":
-                pass
+                print("usable command:")
+                print("""
+                ls put get pwd cd
+                """)
 
             if cmd == "connect":
                 pass

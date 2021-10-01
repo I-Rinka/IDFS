@@ -1,6 +1,7 @@
 import hashlib
 import platform
 import getpass
+import client.config as conf
 
 def GetFileHash(file_path_name: str):
     hash_val = hashlib.md5(
@@ -10,8 +11,10 @@ def GetFileHash(file_path_name: str):
 def GetMyID():
     # return hashlib.md5(
     # (platform.uname().system+platform.uname().node+getpass.getuser()).encode('utf8')).hexdigest()
+    # return hashlib.md5(
+    # ("ubuntu20").encode('utf8')).hexdigest()
     return hashlib.md5(
-    ("ubuntu20").encode('utf8')).hexdigest()
+    (conf.my_ip).encode('utf8')).hexdigest()
 
 def GetFileContentHash(file_path):
     md5_hash = hashlib.md5()

@@ -39,7 +39,7 @@ class Resquest(BaseHTTPRequestHandler):
     def do_GET(self):
         file_path = urllib.parse.unquote(self.path)  # url path
         print(file_path)
-        file_hash = ut.GetFileHash(file_path)
+        # file_hash = ut.GetFileHash(file_path)
 
         auth = self.headers['Authorization']
 
@@ -50,14 +50,17 @@ class Resquest(BaseHTTPRequestHandler):
                 print("database not exist!")
 
         if self.headers['Operation']=="get_file":
-            my_file_path=os.path.join(conf.IDFS_root.replace('\\','/'), file_hash)
+            my_file_path=os.path.join(conf.IDFS_root.replace('\\','/')+'/', file_path[1:])
+            print("upload file {myfile}".format(myfile=my_file_path))
+
             if os.path.isfile(my_file_path): # file exists and return file
-                print("upload file {myfile}".format(myfile=my_file_path))
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
-                fd=open(my_file_path,'wb+')
+                fd=open(my_file_path,'rb')
                 self.end_headers()
+                # print(fd.read())
                 self.wfile.write(fd.read())
+                print("file transfered end")
             else: # file not found
                 self.send_response(404)
                 self.send_header('Content-type', 'application/json')
@@ -120,8 +123,9 @@ class http_server(object):
         super(http_server, self).__init__()
         self.server_instance = ThreadedHTTPServer(
             ('0.0.0.0', conf.IDFS_port), Resquest)
-        db_op=db
         self.server_thread:threading.Thread=None
+        global db_op
+        db_op=db
 
     def start_server(self):
         self.server_thread=threading.Thread(target=self.server_instance.serve_forever,)

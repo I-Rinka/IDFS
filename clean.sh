@@ -1,0 +1,1 @@
+rm -rf my.log my_join.log files/*
