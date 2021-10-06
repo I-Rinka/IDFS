@@ -15,6 +15,12 @@
             "type": "python",
             "request": "launch",
             "module": "run_client"
+        },
+        {
+            "name": "emulate",
+            "type": "python",
+            "request": "launch",
+            "module": "IDFS_EMU.emulator"
         }
     ]
 }
