@@ -221,7 +221,8 @@ def user_get_file(IDFS_cluster: device_cluster):
     total_request = total_request+1
 
     if gfile is None:
-        print("miss hit")
+        pass
+        # print("miss hit")
     else:
         global hit_count
         hit_count = hit_count+1
@@ -233,8 +234,8 @@ def user_get_file(IDFS_cluster: device_cluster):
             global hit_old_count
             hit_old_count = hit_old_count+1
 
-    print("total count:{tt}\nsuccess count:{st}\nold count:{ot}\nsuccess rate:{sr}"
-          .format(tt=total_request, st=hit_count, ot=hit_old_count, sr=str(float(hit_count)/float(total_request)*100)+'%'))
+    # print("total count:{tt}\nsuccess count:{st}\nold count:{ot}\nsuccess rate:{sr}"
+    #       .format(tt=total_request, st=hit_count, ot=hit_old_count, sr=str(float(hit_count)/float(total_request)*100)+'%'))
 
 
 def user_upload_file(Afile: imu.file, IDFS_cluster: device_cluster):
@@ -265,48 +266,32 @@ def user_modify_file(IDFS_cluster: device_cluster):
     dvc.add_file(mfile)
 
 
-def IDFS_upload_cloud(IDFS_cluster: device_cluster):
-    pass
-    # if IDFS_cluster.is_online:
-    #     active = IDFS_cluster.get_device_snapshot(True)
-
-    #     for device in active:
-    #         for file in device.file_pool:
-    #             if file.hash == newest_file_table.get_newest_hash(file.name):
-    #                 ld = IDFS_cluster.get_random_device(False)
-
-    #                 if ld != None and ld != device and ut.get_now_time()-file.timestamp >= conf.old_file_threashold and newest_file.get_file_count(file.name, IDFS_cluster) <= 1:
-    #                     ld.add_file(file)
-    #                     data_usage_lock.acquire()
-    #                     # add cloud update usage
-    #                     print("upload"+file.name+"size"+str(file.size))
-    #                     global cloud_data_usage
-    #                     cloud_data_usage += file.size
-    #                     data_usage_lock.release()
-
-
 def IDFS_cleaner(IDFS_cluster: device_cluster):
     active = IDFS_cluster.get_device_snapshot(True)
     for device in active:
         for file in device.file_pool:
             nfile = newest_file_table.get_newest_file(file.name)
             if file.hash != nfile.hash:
-                if nfile.size >= conf.big_file_threashold:
-                    device.rm_file(file)
+                if ut.get_now_time() - file.timestamp >= conf.old_file_threashold2:
+                    f_count = newest_file.get_file_count(
+                        nfile.name, IDFS_cluster)
+                    if file.size >= conf.big_file_threashold and f_count > 1:
+                        device.rm_file(file)
+                    elif f_count > 2:
+                        device.rm_file(file)
                 else:
-                    # delete duplicated files
-                    if newest_file.get_file_count(file.name, IDFS_cluster) > 2:
-                        if ut.get_now_time()-file.timestamp >= conf.old_file_threashold:
-                            device.rm_file(file)
-
-                    else:
+                    if ut.get_now_time() - file.timestamp >= conf.old_file_threashold:
                         data_usage_lock.acquire()
-                        nnfile = newest_file_table.get_newest_file(file.name)
-                        device.add_file(
-                            nnfile)
                         global p2p_data_usage
-                        p2p_data_usage += nnfile.size
+                        global cloud_data_usage
+                        if IDFS_cluster.get_file(file.name)!=None:
+                            p2p_data_usage+=nfile.size
+                            device.add_file(nfile)
+                        elif IDFS_cluster.is_online:
+                            device.add_file(nfile)
+                            cloud_data_usage+=nfile.size
                         data_usage_lock.release()
+
 
 
 def get_stastictics(IDFS_cluster: device_cluster):
@@ -329,5 +314,16 @@ p2p data:{pd}
 file size:{fs}
 all file size:{afs}
 file ratio:{fr}
+data ratio with device number:{dr}
+
+is online:{io}
+active device:{ad}
+
+miss count:{mc}
+total count:{tc}
+hit old:{ho}
+hit ratio:{hr}
+hit coreect ratio:{hc}
 ----------------
-    """.format(ud=cloud_data_usage, pd=p2p_data_usage, fs=fsize, afs=allsize, fr=float(fsize)/float(allsize)))
+    """.format(ud=cloud_data_usage, pd=p2p_data_usage, fs=fsize, afs=allsize, fr=float(allsize)/float(fsize),dr=float(allsize)/float(fsize*len(IDFS_cluster.all_device)),
+    io=IDFS_cluster.is_online,ad=len(IDFS_cluster.active_cluster),mc=total_request-hit_count,tc=total_request,ho=hit_old_count,hr=float(hit_count)/float(total_request),hc=float(hit_count-hit_old_count)/float(total_request)))
