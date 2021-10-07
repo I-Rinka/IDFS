@@ -262,6 +262,15 @@ def user_modify_file(IDFS_cluster: device_cluster):
     mfile = imu.file(mfile.name, ut.get_rhash(
     ), ut.get_now_time(), random.randint(0, conf.file_max_size))
 
+    # immediately update
+    # data_usage_lock.acquire()
+    # act_d=IDFS_cluster.get_device_snapshot(True)
+    # for dv in act_d:
+    #     dv.add_file(mfile)
+    #     global p2p_data_usage
+    #     p2p_data_usage+=mfile.size
+    # data_usage_lock.release()
+
     newest_file_table.update_file(mfile)
     dvc.add_file(mfile)
 
