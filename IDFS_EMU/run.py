@@ -9,6 +9,8 @@ file_count=conf.file_count
 
 hit_count=10000
 
+fd=open("result_count.txt","w+")
+
 def User_th():
     user_time = ut.get_now_time()
     user_gf_t = user_time
@@ -23,9 +25,7 @@ def User_th():
         if ut.get_now_time()-user_gf_t >= gf_t:
             iop.user_get_file(cluster)
             user_gf_t = ut.get_now_time()
-
-
-            
+            iop.get_stastictics2(fd,10001-hit_count,cluster)
             hit_count-=1
         
 
@@ -95,3 +95,4 @@ if __name__ == "__main__":
     t1.join()
     t2.join()
     iop.get_stastictics(cluster)
+    fd.close()

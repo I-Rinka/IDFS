@@ -3,7 +3,7 @@ file_max_size = 1000
 big_file_threashold = 900
 file_count = 1000
 
-device_offline_probility = 0.8
+device_offline_probility = 0.5
 
 user_get_file_interval = 100
 user_modify_file_interval = user_get_file_interval*2

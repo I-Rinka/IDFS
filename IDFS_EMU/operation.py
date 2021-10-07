@@ -327,3 +327,18 @@ hit coreect ratio:{hc}
 ----------------
     """.format(ud=cloud_data_usage, pd=p2p_data_usage, fs=fsize, afs=allsize, fr=float(allsize)/float(fsize),dr=float(allsize)/float(fsize*len(IDFS_cluster.all_device)),
     io=IDFS_cluster.is_online,ad=len(IDFS_cluster.active_cluster),mc=total_request-hit_count,tc=total_request,ho=hit_old_count,hr=float(hit_count)/float(total_request),hc=float(hit_count-hit_old_count)/float(total_request)))
+
+def get_stastictics2(fd,count:int,IDFS_cluster: device_cluster):
+    fsize = 0
+    fl = newest_file_table.get_all_new_file()
+    for file in fl:
+        fsize += file.size
+
+    allsize = 0
+    all_device = IDFS_cluster.all_device
+    for device in all_device:
+        for file in device.file_pool:
+            allsize += file.size
+
+    # count | file size | normalized size | hit rate | correct rate
+    print(str(count)+","+ str(float(allsize)/float(fsize))+","+str(float(allsize)/float(fsize*len(IDFS_cluster.all_device)))+","+str(float(hit_count)/float(total_request))+","+str(float(hit_count-hit_old_count)/float(total_request)),file=fd)
