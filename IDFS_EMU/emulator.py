@@ -11,7 +11,7 @@ file_count = 100
 user_env_change_interval = 1000
 user_get_file_interval = 100
 user_upload_file_interval = 200
-user_modify_file_interval = user_get_file_interval*2000
+user_modify_file_interval = 100
 user_op_time_divia = 50
 
 IDFS_update_interval = 1
@@ -205,12 +205,14 @@ def user_OP():
             mfile = imu.file(mfile.name, ut.get_rhash(
             ), ut.get_now_time(), random.randint(0, file_max_size))
 
-            newest_file[ufile.name] = mfile  # new file changes
+            newest_file[mfile.name] = mfile  # new file changes
 
             if get_file(mfile.name) is not None:
                 current_using_device.add_file(mfile)
             user_md_t = ut.get_now_time()
 
+def check_file_size():
+    pass
 
 def IDFS_OP():
     while True:
@@ -223,7 +225,7 @@ def IDFS_OP():
                     if file not in active_files:
                         active_files[file.name] = 0
 
-                    upload_file(newest_file[file.name])
+                    # upload_file(newest_file[file.name])
 
                     newest_file_lock.acquire()
                     if not newest_file[file.name].hash == file.hash:

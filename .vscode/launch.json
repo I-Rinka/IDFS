@@ -20,7 +20,7 @@
             "name": "emulate",
             "type": "python",
             "request": "launch",
-            "module": "IDFS_EMU.emulator"
+            "module": "IDFS_EMU.run"
         }
     ]
 }
