@@ -264,22 +264,23 @@ def user_modify_file(IDFS_cluster: device_cluster):
 
 
 def IDFS_upload_cloud(IDFS_cluster: device_cluster):
-    if IDFS_cluster.is_online:
-        active = IDFS_cluster.get_device_snapshot(True)
+    pass
+    # if IDFS_cluster.is_online:
+    #     active = IDFS_cluster.get_device_snapshot(True)
 
-        for device in active:
-            for file in device.file_pool:
-                if file.hash == newest_file_table.get_newest_hash(file.name):
-                    ld = IDFS_cluster.get_random_device(False)
+    #     for device in active:
+    #         for file in device.file_pool:
+    #             if file.hash == newest_file_table.get_newest_hash(file.name):
+    #                 ld = IDFS_cluster.get_random_device(False)
 
-                    if ld != None and ld != device and ut.get_now_time()-file.timestamp >= conf.old_file_threashold and newest_file.get_file_count(file.name, IDFS_cluster) <= 1:
-                        ld.add_file(file)
-                        data_usage_lock.acquire()
-                        # add cloud update usage
-                        print("upload"+file.name+"size"+str(file.size))
-                        global cloud_data_usage
-                        cloud_data_usage += file.size
-                        data_usage_lock.release()
+    #                 if ld != None and ld != device and ut.get_now_time()-file.timestamp >= conf.old_file_threashold and newest_file.get_file_count(file.name, IDFS_cluster) <= 1:
+    #                     ld.add_file(file)
+    #                     data_usage_lock.acquire()
+    #                     # add cloud update usage
+    #                     print("upload"+file.name+"size"+str(file.size))
+    #                     global cloud_data_usage
+    #                     cloud_data_usage += file.size
+    #                     data_usage_lock.release()
 
 
 def IDFS_cleaner(IDFS_cluster: device_cluster):

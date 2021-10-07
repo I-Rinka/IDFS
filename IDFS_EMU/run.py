@@ -31,9 +31,10 @@ def User_th():
             else:
                 cluster.drop_device()
 
-            if random.randint(0,99)>-conf.device_offline_probility*100:
+            if random.randint(0,99)>conf.device_offline_probility*100:
                 cluster.online()
             else:
+                print("offline")
                 cluster.offline()
 
             user_che_t = ut.get_now_time()
@@ -68,19 +69,19 @@ def IDFS_th():
 
         if ut.get_now_time()-IDFS_upload_time>=conf.IDFS_upload_remote_interval:
             iop.IDFS_upload_cloud(cluster)
-        
-        if ut.get_now_time()-IDFS_upload_time>=1000:
             iop.get_stastictics(cluster)
+        
+        # if ut.get_now_time()-IDFS_upload_time>=10000:
 
 # initialize
 
 cluster=iop.device_cluster()
 
-cluster.add_active_device(imu.device("phone", 0.90))
-cluster.add_active_device(imu.device("laptop", 0.70))
-cluster.add_active_device(imu.device("tablet", 0.50))
+cluster.add_active_device(imu.device("phone", 0.10))
+cluster.add_active_device(imu.device("laptop", 0.10))
+cluster.add_active_device(imu.device("tablet", 0.20))
 
-cluster.add_lonely_device(imu.device("desktop", 0.10))
+cluster.add_lonely_device(imu.device("desktop", 0.01))
 
 iop.user_upload_file(imu.file("/fst",ut.get_rhash(),ut.get_now_time(),random.randint(0,conf.file_max_size)),cluster)
 
