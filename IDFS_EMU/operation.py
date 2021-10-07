@@ -120,17 +120,17 @@ class device_cluster():
             for dvc in self.lonely_clients:
                 if cfile == None:
                     cfile = dvc.get_file(file_name)
-                    print("remote access")
+                    # print("remote access")
                 else:
                     tfile = dvc.get_file(file_name)
                     if tfile is not None:
                         if tfile.timestamp > cfile.timestamp:
                             cfile = tfile
-                            print("remote access")
+                            # print("remote access")
         if cfile is not None:  # data useage count
             data_usage_lock.acquire()
             global cloud_data_usage
-            print("file_size"+str(cfile.size))
+            # print("file_size"+str(cfile.size))
             cloud_data_usage += cfile.size
             data_usage_lock.release()
 
