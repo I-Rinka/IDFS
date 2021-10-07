@@ -65,9 +65,12 @@ def IDFS_th():
         IDFS_upload_time=ut.get_now_time()
         if ut.get_now_time()-IDFS_cleaner_time>=conf.IDFS_cleaner_interval:
             iop.IDFS_cleaner(cluster)
+
         if ut.get_now_time()-IDFS_upload_time>=conf.IDFS_upload_remote_interval:
             iop.IDFS_upload_cloud(cluster)
-            iop.get_stastictics()
+        
+        if ut.get_now_time()-IDFS_upload_time>=1000:
+            iop.get_stastictics(cluster)
 
 # initialize
 

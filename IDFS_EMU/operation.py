@@ -31,9 +31,18 @@ class newest_file(object):
         self.newest_file[Afile.name] = Afile
         self.newest_file_lock.release()
 
-    def get_file_count(file_name: str, device_cluster: list) -> int:
+    def get_all_new_file(self):
+        rt = []
+        self.newest_file_lock.acquire()
+        for file_name in newest_file_table.newest_file:
+            rt.append(newest_file_table.get_newest_file(file_name))
+        self.newest_file_lock.release()
+        return rt
+
+    def get_file_count(file_name: str, device_cluster) -> int:
         count = 0
-        for device in device_cluster:
+        dc = device_cluster.get_device_snapshot(True)
+        for device in dc:
             for file in device.file_pool:
                 if file.name == file_name:
                     count += 1
@@ -48,6 +57,8 @@ class newest_file(object):
             i = i+1
 
     def get_newest_hash(self, name: str):
+        while not name in self.newest_file:
+            pass
         return self.newest_file[name].hash
 
     def get_newest_file(self, name: str) -> imu.file:
@@ -117,6 +128,7 @@ class device_cluster():
         if cfile is not None:  # data useage count
             data_usage_lock.acquire()
             global cloud_data_usage
+            print("file_size"+str(cfile.size))
             cloud_data_usage += cfile.size
             data_usage_lock.release()
 
@@ -134,16 +146,18 @@ class device_cluster():
 
         self.cluster_lock.acquire()
         for dvc in cluster:
-            total_usage+=dvc.use_frequency
+            total_usage += dvc.use_frequency
         for dvc in cluster:
             if base <= i and base+100*(dvc.use_frequency)/total_usage >= i:
+                self.cluster_lock.release()
                 return dvc
             else:
                 base += 100*(dvc.use_frequency)/total_usage
         self.cluster_lock.release()
+        return None
 
     def drop_device(self):
-        if len(self.active_cluster) >= 1:
+        if len(self.active_cluster) > 1:
             i = random.randint(0, 99)
             self.cluster_lock.acquire()
             total_usage = 0
@@ -211,7 +225,7 @@ def user_get_file(IDFS_cluster: device_cluster):
         hit_count = hit_count+1
 
         # current device download file
-        if gfile.hash == newest_file[gfile.name].hash:
+        if gfile.hash == newest_file_table.get_newest_hash(gfile.name):
             IDFS_cluster.get_random_device(True).add_file(gfile)
         else:
             global hit_old_count
@@ -224,10 +238,10 @@ def user_get_file(IDFS_cluster: device_cluster):
 def user_upload_file(Afile: imu.file, IDFS_cluster: device_cluster):
     d1 = IDFS_cluster.get_random_device(True)
     # strategy: copy once
-    while True:
-        d2 = IDFS_cluster.get_random_device(True)
-        if len(IDFS_cluster.get_device_snapshot(True)) <= 1 and d2 != d1:
-            break
+    # while True:
+    d2 = IDFS_cluster.get_random_device(True)
+    #     if d1==d2 or len(IDFS_cluster.get_device_snapshot(True)) <= 1:
+    #         break
 
     d1.add_file(Afile)
     if d2 != d1:
@@ -258,11 +272,11 @@ def IDFS_upload_cloud(IDFS_cluster: device_cluster):
                 if file.hash == newest_file_table.get_newest_hash(file.name):
                     ld = IDFS_cluster.get_random_device(False)
 
-                    if ld != None and ld != device:
+                    if ld != None and ld != device and ut.get_now_time()-file.timestamp >= conf.old_file_threashold and newest_file.get_file_count(file.name, IDFS_cluster) <= 1:
                         ld.add_file(file)
-
                         data_usage_lock.acquire()
                         # add cloud update usage
+                        print("upload"+file.name+"size"+str(file.size))
                         global cloud_data_usage
                         cloud_data_usage += file.size
                         data_usage_lock.release()
@@ -277,38 +291,40 @@ def IDFS_cleaner(IDFS_cluster: device_cluster):
                 if nfile.size >= conf.big_file_threashold:
                     device.rm_file(file)
                 else:
-                    if newest_file.get_file_count(file.name, IDFS_cluster) > 2: # delete duplicated files
-                        if ut.get_now_time()-file.timestamp>=conf.old_file_threashold:
+                    # delete duplicated files
+                    if newest_file.get_file_count(file.name, IDFS_cluster) > 2:
+                        if ut.get_now_time()-file.timestamp >= conf.old_file_threashold:
                             device.rm_file(file)
-                    
+
                     else:
                         data_usage_lock.acquire()
-                        nnfile=newest_file_table.get_newest_file(file.name)
+                        nnfile = newest_file_table.get_newest_file(file.name)
                         device.add_file(
                             nnfile)
                         global p2p_data_usage
-                        p2p_data_usage+=nnfile.size
+                        p2p_data_usage += nnfile.size
                         data_usage_lock.release()
 
 
 def get_stastictics(IDFS_cluster: device_cluster):
-    fsize=0
-    for file_name in newest_file_table.newest_file:
-        fsize+=newest_file_table.get_newest_file(file_name).size
-    
-    allsize=0
-    all_device=IDFS_cluster.all_device()
+    fsize = 0
+    fl = newest_file_table.get_all_new_file()
+    for file in fl:
+        fsize += file.size
+
+    allsize = 0
+    all_device = IDFS_cluster.all_device
     for device in all_device:
         for file in device.file_pool:
-            allsize+=file.size
-    
+            allsize += file.size
+
     print("""
-    ----------------
-    >
-    upload data:{ud}
-    p2p data:{pd}
-    file size:{fs}
-    all file size:{afs}
-    file ratio:{fr}
-    ----------------
-    """.format(ud=cloud_data_usage,pd=p2p_data_usage,fs=fsize,afs=allsize,fr=float(fsize)/float(allsize)))
+----------------
+>
+upload data:{ud}
+p2p data:{pd}
+file size:{fs}
+all file size:{afs}
+file ratio:{fr}
+----------------
+    """.format(ud=cloud_data_usage, pd=p2p_data_usage, fs=fsize, afs=allsize, fr=float(fsize)/float(allsize)))
