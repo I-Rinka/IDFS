@@ -62,6 +62,8 @@ class newest_file(object):
         return self.newest_file[name].hash
 
     def get_newest_file(self, name: str) -> imu.file:
+        while not name in self.newest_file:
+            pass
         return self.newest_file[name]
 
 
