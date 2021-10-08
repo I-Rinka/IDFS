@@ -11,10 +11,28 @@
             "module": "test.test"
         },
         {
-            "name": "client",
+            "name": "client1",
             "type": "python",
             "request": "launch",
-            "module": "run_client"
+            "module": "run_client_fst"
+        },
+        {
+            "name": "client2",
+            "type": "python",
+            "request": "launch",
+            "module": "run_client_ac"
+        },
+        {
+            "name": "clientll",
+            "type": "python",
+            "request": "launch",
+            "module": "run_client_ll"
+        },
+        {
+            "name": "server",
+            "type": "python",
+            "request": "launch",
+            "module": "run_server"
         },
         {
             "name": "emulate",

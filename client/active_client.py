@@ -1,4 +1,3 @@
-from _typeshed import Self
 import os
 import client.db as dbo
 import client.UI as UI
@@ -76,7 +75,7 @@ class active_client(object):
             self.db.upload_file(file_name, self.current_path, os.stat(
                 file_path).st_mtime, content_hash)
             shutil.copy(file_path, os.path.join(
-                current_path, content_hash))
+                conf.IDFS_root, content_hash))
             # not using path hash any more, just using content hash
             print("commit file {filehash}".format(
                 filehash=content_hash))

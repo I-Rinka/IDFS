@@ -15,12 +15,12 @@ class lonley_client(object):
     def start(self, connect_server:str):
         while True:
             header = {"Content-Type": "file", "Authorization": "{}".format(
-            ut.GetMyID()), "Operation": "{}".format("null")}
+            ut.GetMyID()), "Operation": "{}".format("get_task")}
             rq= requests.get("http://"+connect_server+":" +
                           str(conf.IDFS_port), timeout=(1, None), headers=header)
             
+            file=rq.content.decode("utf8")
             if rq.headers['Operation']=="upload_file":
-                file=rq.content.decode("utf8")
                 file_path=os.path.join(conf.IDFS_root,file)
                 if os.path.exists(file_path):
                     files={'file':open(file_path,'rb')}
