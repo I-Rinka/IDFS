@@ -73,6 +73,6 @@ if __name__ == "__main__":
     # server.serve_forever()
 
     for i in range(3):
-        get.get_thread(None,["1233"],["127.0.0.1"],["哈哈哈啊"],"/nihao/haixing.jpg")
+        get.get_local(None,["1233"],["127.0.0.1"],["哈哈哈啊"],"/nihao/haixing.jpg")
         
 

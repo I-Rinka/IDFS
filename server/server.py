@@ -53,6 +53,7 @@ class Resquest(BaseHTTPRequestHandler):
                     client[0].end_headers()
                     client[0].wfile.write(file.encode('utf-8'))
                     client[1].release()
+                    client_queue.remove(client)
 
             
         elif self.headers['Operation']=='get_task': # register

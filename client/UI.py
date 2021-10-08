@@ -65,7 +65,7 @@ class client_CLI(object):
                     file_path = op.split()[1]
                 else:
                     file_path = input("input file path:")
-                get.get_thread(self.db, file_path)
+                get.get_local(self.db, file_path)
 
             elif cmd == "pwd":
                 print(current_path)

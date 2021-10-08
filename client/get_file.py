@@ -6,11 +6,7 @@ import client.config as conf
 import os
 
 
-def request_cloud():
-    print("remote access")
-
-
-def get_thread(db, file_path: str):
+def get_local(db, file_path: str):
     id_list, ip_list, file_list = db.get_available_device(
         os.path.basename(file_path), os.path.dirname(file_path))
     print(id_list)
@@ -25,7 +21,7 @@ def get_thread(db, file_path: str):
     header = {"Content-Type": "file", "Authorization": "{}".format(
         ut.GetMyID()), "Operation": "{}".format("get_file")}
     if len(id_list) == 0:
-        request_cloud()
+        return False
     else:
         have_get = False
         for i in range(len(id_list)):
@@ -60,5 +56,17 @@ def get_thread(db, file_path: str):
                     print("offline")
             else:
                 pass
-        if not have_get:
-            request_cloud()
+        return have_get
+
+def get_remote(server_ip:str,file_hash:str,server_port=conf.IDFS_port):
+    header = {"Content-Type": "file", "Authorization": "{}".format(
+        ut.GetMyID()), "Operation": "{}".format("get_file")}
+    rq = requests.get("http://"+server_ip+":"+str(conf.IDFS_port) +
+                                  "/"+file_hash, timeout=(1, None), headers=header)
+    if rq.status_code == 200:
+        f = open(conf.IDFS_root+'/'+file_hash, 'wb+')
+        f.write(rq.content)
+        print("receive file:{path}".format(path=file_hash))
+        f.close()
+        return True
+    return False
