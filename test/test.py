@@ -1,19 +1,34 @@
-import IDFS_EMU.members as imu
+from re import L
+import threading
+import server.server as ss
+import requests
 import time
-import random
-client=imu.device(1,0.9)
-
-for i in range(10):
-    f=imu.file("/fst",i,timestamp=time.time(),size=100+i)
-    client.add_file(f)
-
-for i in range(3):
-    f=imu.file("/scd"+str(i),random.randint(0,0x3f3f3f3f3f),timestamp=time.time(),size=100+i)
-    client.add_file(f)
-    print(f.__dict__)
+import server.config as conf
 
 
-# print(client.get_file("/fst").__dict__)
-# print(client.get_file("/scd2").__dict__)
-for file in client.file_pool:
-    print(file.__dict__)
+
+def th0():
+    header = {"Content-Type": "file", "Authorization": "{}".format(
+    123123123), "Operation": "{}".format("get_task")}
+    rq=requests.get("http://127.0.0.1:"+str(conf.IDFS_port),headers=header)
+
+    print("th0 getting task!")
+    print(rq.headers)
+    print(rq.content)
+
+def th1():
+    header = {"Content-Type": "file", "Authorization": "{}".format(
+    123123123), "Operation": "{}".format("get_file")}
+    rq=requests.get("http://127.0.0.1:"+str(conf.IDFS_port)+"/"+"12345",headers=header)
+    print(rq.status_code)
+
+if __name__ == "__main__":
+    threading.Thread(target=ss.IDFS_server().server_start,).start()
+    for i in range(10):
+        print("th0!")
+        threading.Thread(target=th0,).start()
+
+    time.sleep(10)
+    print("th1 getting file!")
+    th1()
+    # threading.Thread(target=th1,).start()

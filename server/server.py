@@ -17,9 +17,10 @@ import requests
 import server.config as conf
 import client.db as abo
 
-files_requests=[]
+client_queue=[]
 
 class Resquest(BaseHTTPRequestHandler):
+
     def do_GET(self):
         file_path = urllib.parse.unquote(self.path)  # url path
         print(file_path)
@@ -43,15 +44,33 @@ class Resquest(BaseHTTPRequestHandler):
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
                 file=file_path[1:]
-                if file not in files_requests:
-                    files_requests.append(file)
+
+                # write request to waiting clients
+                for client in client_queue:
+                    print("update request"+file)
+                    client[0].send_header('Content-type', 'application/json')
+                    client[0].send_header('Operation', 'upload_file')
+                    client[0].end_headers()
+                    client[0].wfile.write(file.encode('utf-8'))
+                    client[1].release()
 
             
+        elif self.headers['Operation']=='get_task': # register
+            self.send_response(200)
+            # self.send_header('Content-type', 'application/json')
+            # self.end_headers()
+            cl=threading.Lock()
+            client_queue.append([self,cl])
+            cl.acquire() # need double aquire to lock this thread
+            cl.acquire()
+            # print("server OK")
+
+
         elif self.headers['Operation']=='null': # register
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
-            self.wfile.write("\n".join(files_requests)) # this is the request list to string
+            # self.wfile.write("\n".join(files_requests)) # this is the request list to string
 
         else:
             self.send_response(404)
@@ -73,15 +92,17 @@ class Resquest(BaseHTTPRequestHandler):
             fd=open(os.path.join(conf.IDFS_root,file_hash),"wb+")
             datas = self.rfile.read(int(self.headers['content-length']))
             fd.write(datas)
-            if file_hash in files_requests:
-                files_requests.remove(file_hash)
-
-        self.wfile.write("\n".join(files_requests))
         
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """Handle requests in a separate thread."""
 
-server_instance = ThreadedHTTPServer(
-    ('0.0.0.0', conf.IDFS_port), Resquest)
-server_instance.serve_forever()
+class IDFS_server(object):
+    """docstring for IDFS_server."""
+    def __init__(self):
+        super(IDFS_server, self).__init__()
+        self.server_instance = ThreadedHTTPServer(
+            ('0.0.0.0', conf.IDFS_port), Resquest)
+
+    def server_start(self):
+        self.server_instance.serve_forever()
