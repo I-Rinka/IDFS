@@ -9,6 +9,7 @@ import requests
 import json
 import time
 import client.get_file as get
+import client.http_handler as http_server
 
 
 class active_client(object):
@@ -19,6 +20,7 @@ class active_client(object):
         self.db = None
         self.current_path = '/'
         self.server_ip = server_ip
+        http_server.http_server(self.db).start_server()
 
     def __init__(self, my_ip: str, server_ip: conf.server_ip):
         super(active_client, self).__init__()
@@ -26,6 +28,7 @@ class active_client(object):
         self.current_path = '/'
         self.server_ip = server_ip
         self.db = None
+        http_server.http_server(self.db).start_server()
 
     def start_db(self):
         rqlite = dbo.rqdb(conf.my_ip)

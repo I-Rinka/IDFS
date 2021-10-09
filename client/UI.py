@@ -2,9 +2,11 @@ import socket
 import client.db
 import util as ut
 import os
+import client.config as conf
 import shutil
-import client.get_file as get
 
+# When join current path with IDFS path, delete the first '/' in current path by using current_path[1:]
+# like:  os.path.join('C:\\Users\\I_Rin\\Desktop\\IDFS\\files\\'.replace('\\','/'),'haha/xing')]
 
 class client_CLI(object):
     """docstring for client_UI."""
@@ -15,9 +17,7 @@ class client_CLI(object):
             my_IP = socket.gethostbyname(socket.gethostname())
         self.IP = my_IP
         self.db: client.db.rqdb = db
-        self.IDFS_root = IDFS_root
-# current path和本机路径合体的时候注意，要把current path的'/'去掉，用current_path[1:]
-# os.path.join('C:\\Users\\I_Rin\\Desktop\\IDFS\\files\\'.replace('\\','/'),'haha/xing')]
+        
 
     def start_cli(self):
         current_path = '/'
@@ -49,10 +49,11 @@ class client_CLI(object):
                 if os.path.isfile(file_path):
                     file_name = os.path.basename(file_path)
                     content_hash = ut.GetFileContentHash(file_path)
-                    self.db.upload_file(file_name, current_path, os.stat(
-                        file_path).st_mtime, content_hash)
+
+                    # client upload db
+
                     shutil.copy(file_path, os.path.join(
-                        self.IDFS_root, content_hash))
+                        conf.IDFS_root, content_hash))
                     # not using path hash any more, just using content hash
                     print("commit file {filehash}".format(
                         filehash=content_hash))
@@ -65,7 +66,7 @@ class client_CLI(object):
                     file_path = op.split()[1]
                 else:
                     file_path = input("input file path:")
-                get.get_local(self.db, file_path)
+                # get process
 
             elif cmd == "pwd":
                 print(current_path)
