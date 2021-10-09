@@ -13,5 +13,5 @@ user_op_time_divia = user_get_file_interval/2
 
 IDFS_cleaner_interval = 100
 
-old_file_threashold = user_get_file_interval*2
-old_file_threashold2 = old_file_threashold*10
+old_file_threashold = user_env_change_interval/2
+old_file_threashold2 = user_get_file_interval*10
