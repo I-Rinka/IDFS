@@ -1,4 +1,5 @@
 import os
+from typing import Tuple
 import pyrqlite.dbapi2 as rqapi
 import subprocess
 import tempfile
@@ -105,8 +106,12 @@ class rqdb(object):
                         INSERT OR REPLACE INTO device_table VALUES('{deviceid}','available',{lasttime},'{myip}');
                         """.format(deviceid=device_id, lasttime=str(int(time.time())), myip=conf.my_ip)
                     )
+            except:
+                print("add device error")
+                return False
             finally:
                 pass
+            return True
 
     def offline_device(self, device_id: str):
         if self.is_start and self.connection is not None:
@@ -119,8 +124,11 @@ class rqdb(object):
                         WHERE deviceid = '{deviceid}';
                         """.format(deviceid=device_id)
                     )
+            except:
+                print("add device error")
+                return False
             finally:
-                pass
+                return True
 
     def upload_file(self, file_name: str, IDFS_path: str, file_time: int, content_hash: str):
         if self.is_start and self.connection is not None:
@@ -136,8 +144,11 @@ class rqdb(object):
                         INSERT OR REPLACE INTO log_table(deviceid,timestamp,filename,path,contenthash) VALUES ('{myid}',{logtime},'{filename}','{path}','{contenthash}');
                         """.format(myid=self.my_id, logtime=int(time.time()), filename=file_name, path=IDFS_path, contenthash=content_hash)
                     )
+            except:
+                print("upload {} failed".format(file_name))
+                return False
             finally:
-                pass
+                return True
 
     def download_file(self, file_name: str, IDFS_path: str, content_hash: str):
         if self.is_start and self.connection is not None:
@@ -148,8 +159,11 @@ class rqdb(object):
                         INSERT OR REPLACE INTO log_table(deviceid,timestamp,filename,path,contenthash) VALUES ('{myid}',{logtime},"{filename}","{filepath}",'{contenthash}');
                         """.format(myid=self.my_id, filename=file_name, path=IDFS_path, logtime=int(time.time()), contenthash=content_hash)
                     )
+            except:
+                print("download {} failed".format(file_name))
+                return False
             finally:
-                pass
+                return True
 
     def get_available_device(self, file_name: str, IDFS_path: str):
         if self.is_start and self.connection is not None:
@@ -172,6 +186,9 @@ class rqdb(object):
                             dv_ip.append(line[3])
                             dv_file_hash.append(line[4])
                     return dv_id, dv_ip, dv_file_hash
+            except:
+                print("get file {} device failed".format(file_name))
+                return [],[],[]
             finally:
                 pass
     

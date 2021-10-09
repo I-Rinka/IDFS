@@ -92,7 +92,13 @@ class Resquest(BaseHTTPRequestHandler):
         if self.headers['post_file']:
             fd=open(os.path.join(conf.IDFS_root,file_hash),"wb+")
             datas = self.rfile.read(int(self.headers['content-length']))
-            fd.write(datas)
+            content_length = int(self.headers['Content-Length']) # <--- Gets the size of data
+
+            post_data = self.rfile.read(content_length) 
+            fd.write(post_data)
+            print("upload file OK")
+            fd.close()
+            self.wfile.write("POST request for {}".format(self.path).encode('utf-8'))
         
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):

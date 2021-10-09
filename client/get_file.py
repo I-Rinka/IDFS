@@ -61,12 +61,15 @@ def get_local(db, file_path: str):
 def get_remote(server_ip:str,file_hash:str,server_port=conf.IDFS_port):
     header = {"Content-Type": "file", "Authorization": "{}".format(
         ut.GetMyID()), "Operation": "{}".format("get_file")}
-    rq = requests.get("http://"+server_ip+":"+str(conf.IDFS_port) +
-                                  "/"+file_hash, timeout=(1, None), headers=header)
-    if rq.status_code == 200:
-        f = open(conf.IDFS_root+'/'+file_hash, 'wb+')
-        f.write(rq.content)
-        print("receive file:{path}".format(path=file_hash))
-        f.close()
-        return True
+    try:
+        rq = requests.get("http://"+server_ip+":"+str(conf.IDFS_port) +
+                                    "/"+file_hash, timeout=(1, None), headers=header)
+        if rq.status_code == 200:
+            f = open(conf.IDFS_root+'/'+file_hash, 'wb+')
+            f.write(rq.content)
+            print("receive file:{path}".format(path=file_hash))
+            f.close()
+            return True
+    except:
+        print("fail get remote")
     return False
