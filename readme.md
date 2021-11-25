@@ -1,4 +1,6 @@
-# How to use
+# IDFS:the Individual Distributed File System
+
+It is the implementation of the paper named *IDFS:the Individual Distributed File System*.
 
 ## PyIDFS
 
